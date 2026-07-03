@@ -82,10 +82,16 @@
             
             <!-- VIEW 1: Dashboard (GP wise SC count) -->
             <div id="dashboardView">
-                <header class="topbar">
+                <header class="topbar flex justify-between items-center w-full">
                     <div class="header-titles">
                         <h1>Gram Panchayat Overview</h1>
                         <p>Interactive directory of Sub Centers</p>
+                    </div>
+                    <!-- Actions -->
+                    <div class="flex gap-2">
+                        <button onclick="refreshDashboard()" class="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition duration-150 flex items-center gap-1.5" title="Refresh Data">
+                            <i class="fas fa-sync-alt text-sm"></i> Refresh
+                        </button>
                     </div>
                 </header>
 
@@ -156,6 +162,9 @@
                     </div>
                     <!-- Export Actions -->
                     <div class="flex gap-2">
+                        <button onclick="fetchEcMeetingData()" class="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition duration-150 flex items-center gap-1.5" title="Refresh Data">
+                            <i class="fas fa-sync-alt text-sm"></i> Refresh
+                        </button>
                         <button onclick="exportEcToExcel()" class="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md shadow-sm transition duration-150 flex items-center gap-1.5" title="Export to Excel">
                             <i class="fas fa-file-excel text-sm"></i> Excel
                         </button>
@@ -244,6 +253,9 @@
                     </div>
                     <!-- Export Actions -->
                     <div class="flex gap-2" id="deliveryExportBtns">
+                        <button onclick="fetchDeliveryData()" class="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition duration-150 flex items-center gap-1.5" title="Refresh Data">
+                            <i class="fas fa-sync-alt text-sm"></i> Refresh
+                        </button>
                         <button onclick="exportDelToExcel()" class="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md shadow-sm transition duration-150 flex items-center gap-1.5" title="Export to Excel">
                             <i class="fas fa-file-excel text-sm"></i> Excel
                         </button>
@@ -365,6 +377,9 @@
                         </div>
                         <!-- Export for monthly view -->
                         <div style="margin-left: auto; display: flex; gap: 8px; align-items: flex-end;">
+                            <button onclick="fetchDeliveryData()" class="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition duration-150 flex items-center gap-1.5" title="Refresh Data">
+                                <i class="fas fa-sync-alt text-sm"></i> Refresh
+                            </button>
                             <button onclick="exportDelMonthlyToExcel()" class="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md shadow-sm transition duration-150 flex items-center gap-1.5" title="Export to Excel">
                                 <i class="fas fa-file-excel text-sm"></i> Excel
                             </button>
@@ -415,6 +430,9 @@
                     </div>
                     <!-- Export Actions -->
                     <div class="flex gap-2">
+                        <button onclick="fetchIdcfData()" class="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition duration-150 flex items-center gap-1.5" title="Refresh Data">
+                            <i class="fas fa-sync-alt text-sm"></i> Refresh
+                        </button>
                         <button onclick="exportIdcfToExcel()" class="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md shadow-sm transition duration-150 flex items-center gap-1.5" title="Export to Excel">
                             <i class="fas fa-file-excel text-sm"></i> Excel
                         </button>

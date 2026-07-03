@@ -273,6 +273,14 @@ window.handleSearch = function () {
     renderTable();
 }
 
+window.refreshDashboard = function () {
+    if (searchInput) {
+        searchInput.value = '';
+        searchTerm = '';
+    }
+    initDashboard();
+}
+
 // ----------------------------------------------------
 // EC MEETING REPORT VIEW LOGIC
 // ----------------------------------------------------
