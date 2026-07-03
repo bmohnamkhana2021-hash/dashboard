@@ -62,6 +62,15 @@ let filteredDeliveryData = [];
 let currentDelDefaulters = [];
 let deliveryRecordToDeleteId = null;
 
+// IDCF Report State (Google Sheet as Database)
+const IDCF_SHEET_ID = '1UoB53GQLIRC_uTNczEsDqB8rWSmH6-pVSDWAiVC51IE';
+// Set this URL after deploying the Apps Script (see idcf_apps_script.js for instructions)
+let IDCF_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwtw-O0IjmFZq67-VbCTF-cWgHK1J1mRPhu6iuRdXZLIgVHW1qPu8FrDTRy3rXaqzXo/exec';
+let idcfData = [];
+let filteredIdcfData = [];
+let currentIdcfDefaulters = [];
+let idcfRecordToDeleteId = null;
+
 // DOM Elements - Dashboard View
 const tableBody = document.getElementById('tableBody');
 const searchInput = document.getElementById('searchInput');
@@ -111,24 +120,28 @@ function initDashboard() {
 // ----------------------------------------------------
 // VIEW SWITCHING LOGIC (SPA)
 // ----------------------------------------------------
-window.switchView = function(viewName) {
+window.switchView = function (viewName) {
     currentView = viewName;
-    
+
     const navDashboard = document.getElementById('navDashboard');
     const navEcReport = document.getElementById('navEcReport');
     const navDelivery = document.getElementById('navDelivery');
-    
+    const navIdcf = document.getElementById('navIdcf');
+
     const dashboardView = document.getElementById('dashboardView');
     const ecReportView = document.getElementById('ecReportView');
     const deliveryView = document.getElementById('deliveryView');
+    const idcfView = document.getElementById('idcfView');
 
     navDashboard.classList.remove('active');
     navEcReport.classList.remove('active');
     if (navDelivery) navDelivery.classList.remove('active');
-    
+    if (navIdcf) navIdcf.classList.remove('active');
+
     dashboardView.style.display = 'none';
     ecReportView.style.display = 'none';
     if (deliveryView) deliveryView.style.display = 'none';
+    if (idcfView) idcfView.style.display = 'none';
 
     if (viewName === 'dashboard') {
         navDashboard.classList.add('active');
@@ -149,6 +162,14 @@ window.switchView = function(viewName) {
             fetchDeliveryData();
         } else {
             drawDeliveryTable();
+        }
+    } else if (viewName === 'idcf') {
+        if (navIdcf) navIdcf.classList.add('active');
+        if (idcfView) idcfView.style.display = 'block';
+        if (idcfData.length === 0) {
+            fetchIdcfData();
+        } else {
+            drawIdcfTable();
         }
     }
 }
@@ -229,7 +250,7 @@ function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-window.handleSort = function(field) {
+window.handleSort = function (field) {
     if (sortField === field) {
         sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
@@ -247,7 +268,7 @@ window.handleSort = function(field) {
     renderTable();
 }
 
-window.handleSearch = function() {
+window.handleSearch = function () {
     searchTerm = searchInput.value;
     renderTable();
 }
@@ -272,7 +293,7 @@ async function fetchEcMeetingData() {
         if (error) throw error;
 
         ecMeetingData = data || [];
-        
+
         updateCascadingDropdowns('init');
         applyEcFilters();
     } catch (error) {
@@ -320,18 +341,18 @@ function updateCascadingDropdowns(source) {
     // Populate Year dropdown on init
     if (source === 'init') {
         const yearsArr = Array.from(yearsSet).sort().reverse();
-        filterYear.innerHTML = '<option value="">All Years</option>' + 
+        filterYear.innerHTML = '<option value="">All Years</option>' +
             yearsArr.map(y => `<option value="${y}">${y}</option>`).join('');
         filterYear.value = selYear;
     }
 
     // Populate Month dropdown depending on Year selection
     if (source === 'init' || source === 'year') {
-        const monthsArr = Array.from(monthsMap.values()).sort((a,b) => {
+        const monthsArr = Array.from(monthsMap.values()).sort((a, b) => {
             // Sort months reverse chronologically
             return new Date(b) - new Date(a);
         });
-        filterMonth.innerHTML = '<option value="">All Months</option>' + 
+        filterMonth.innerHTML = '<option value="">All Months</option>' +
             monthsArr.map(m => `<option value="${m}">${m}</option>`).join('');
         // check if old selection is still valid
         filterMonth.value = monthsArr.includes(selMonth) ? selMonth : "";
@@ -340,13 +361,13 @@ function updateCascadingDropdowns(source) {
     // Populate Date dropdown depending on Year and Month selection
     if (source === 'init' || source === 'year' || source === 'month') {
         const datesArr = Array.from(datesSet).sort().reverse();
-        filterDate.innerHTML = '<option value="">All Dates</option>' + 
+        filterDate.innerHTML = '<option value="">All Dates</option>' +
             datesArr.map(d => `<option value="${d}">${formatDateDDMMYYYY(d)}</option>`).join('');
         filterDate.value = datesArr.includes(selDate) ? selDate : "";
     }
 }
 
-window.handleFilterChange = function(source) {
+window.handleFilterChange = function (source) {
     updateCascadingDropdowns(source);
     applyEcFilters();
 }
@@ -470,7 +491,7 @@ function drawReportTable() {
 // ----------------------------------------------------
 
 // EDIT DIALOG ACTIONS
-window.openEditModal = function(id) {
+window.openEditModal = function (id) {
     const record = ecMeetingData.find(r => r.id === id);
     if (!record) return;
 
@@ -491,11 +512,11 @@ window.openEditModal = function(id) {
     editModal.classList.add('active');
 }
 
-window.closeEditModal = function() {
+window.closeEditModal = function () {
     editModal.classList.remove('active');
 }
 
-window.saveRecord = async function(event) {
+window.saveRecord = async function (event) {
     event.preventDefault();
 
     const id = document.getElementById('edit-id').value;
@@ -545,17 +566,17 @@ window.saveRecord = async function(event) {
 }
 
 // DELETE DIALOG ACTIONS
-window.openDeleteConfirm = function(id) {
+window.openDeleteConfirm = function (id) {
     recordToDeleteId = id;
     confirmModal.classList.add('active');
 }
 
-window.closeConfirmModal = function() {
+window.closeConfirmModal = function () {
     confirmModal.classList.remove('active');
     recordToDeleteId = null;
 }
 
-window.executeDeleteRecord = async function() {
+window.executeDeleteRecord = async function () {
     if (!recordToDeleteId) return;
 
     const btnDelete = document.getElementById('btnConfirmDelete');
@@ -643,7 +664,7 @@ function updateDelCascadingDropdowns(source) {
 
     if (source === 'init') {
         const yearsArr = Array.from(yearsSet).sort().reverse();
-        filterDelYear.innerHTML = '<option value="">All Years</option>' + 
+        filterDelYear.innerHTML = '<option value="">All Years</option>' +
             yearsArr.map(y => `<option value="${y}">${y}</option>`).join('');
         filterDelYear.value = "";
     }
@@ -651,15 +672,15 @@ function updateDelCascadingDropdowns(source) {
     if (source === 'init' || source === 'year') {
         const monthsArr = Array.from(monthsSet);
         const monthOrder = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        monthsArr.sort((a,b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
+        monthsArr.sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
 
-        filterDelMonth.innerHTML = '<option value="">All Months</option>' + 
+        filterDelMonth.innerHTML = '<option value="">All Months</option>' +
             monthsArr.map(m => `<option value="${m}">${m}</option>`).join('');
         filterDelMonth.value = monthsArr.includes(selMonth) ? selMonth : "";
     }
 }
 
-window.handleDelFilterChange = function(source) {
+window.handleDelFilterChange = function (source) {
     updateDelCascadingDropdowns(source);
     applyDelFilters();
 }
@@ -754,7 +775,7 @@ function drawDeliveryTable() {
 }
 
 // EDIT DELIVERY DIALOG ACTIONS
-window.openEditDeliveryModal = function(id) {
+window.openEditDeliveryModal = function (id) {
     const record = deliveryData.find(r => r.id === id);
     if (!record) return;
 
@@ -776,12 +797,12 @@ window.openEditDeliveryModal = function(id) {
     editDeliveryModal.classList.add('active');
 }
 
-window.closeEditDeliveryModal = function() {
+window.closeEditDeliveryModal = function () {
     editDeliveryModal.classList.remove('active');
     editDeliveryForm.reset();
 }
 
-window.saveDeliveryRecord = async function(e) {
+window.saveDeliveryRecord = async function (e) {
     e.preventDefault();
 
     const id = parseInt(document.getElementById('edit-del-id').value);
@@ -822,17 +843,17 @@ window.saveDeliveryRecord = async function(e) {
 }
 
 // DELETE DELIVERY DIALOG ACTIONS
-window.openDeliveryDeleteConfirm = function(id) {
+window.openDeliveryDeleteConfirm = function (id) {
     deliveryRecordToDeleteId = id;
     confirmDeliveryModal.classList.add('active');
 }
 
-window.closeDeliveryConfirmModal = function() {
+window.closeDeliveryConfirmModal = function () {
     confirmDeliveryModal.classList.remove('active');
     deliveryRecordToDeleteId = null;
 }
 
-window.executeDeleteDeliveryRecord = async function() {
+window.executeDeleteDeliveryRecord = async function () {
     if (!deliveryRecordToDeleteId) return;
 
     const btnDelete = document.getElementById('btnConfirmDelDelete');
@@ -860,7 +881,7 @@ window.executeDeleteDeliveryRecord = async function() {
 }
 
 // DELIVERY DEFAULTERS MODAL ACTIONS
-window.openDelDefaultersModal = function() {
+window.openDelDefaultersModal = function () {
     const container = document.getElementById('delDefaultersListContainer');
     container.innerHTML = '';
 
@@ -884,7 +905,7 @@ window.openDelDefaultersModal = function() {
     defaultersDeliveryModal.classList.add('active');
 }
 
-window.closeDelDefaultersModal = function() {
+window.closeDelDefaultersModal = function () {
     defaultersDeliveryModal.classList.remove('active');
 }
 
@@ -894,7 +915,7 @@ window.closeDelDefaultersModal = function() {
 let delCurrentSubView = 'facility'; // 'facility' or 'monthly'
 let delMonthlyInitialized = false;
 
-window.switchDelSubView = function(subView) {
+window.switchDelSubView = function (subView) {
     delCurrentSubView = subView;
 
     const tabFacility = document.getElementById('tabFacilityView');
@@ -1027,7 +1048,7 @@ function updateFacilityMultiselectLabel() {
     }
 }
 
-window.toggleFacilityDropdown = function() {
+window.toggleFacilityDropdown = function () {
     const dropdown = document.getElementById('facilityMultiselect');
     dropdown.classList.toggle('open');
     if (dropdown.classList.contains('open')) {
@@ -1036,7 +1057,7 @@ window.toggleFacilityDropdown = function() {
     }
 }
 
-window.toggleFacilityCheckbox = function(facility, event) {
+window.toggleFacilityCheckbox = function (facility, event) {
     // Don't toggle twice when clicking the checkbox itself
     if (event.target.tagName === 'INPUT') {
         // checkbox already toggled by browser
@@ -1060,7 +1081,7 @@ window.toggleFacilityCheckbox = function(facility, event) {
     drawDelMonthlyTable();
 }
 
-window.toggleAllFacilities = function() {
+window.toggleAllFacilities = function () {
     const selectAllCb = document.getElementById('facilitySelectAll');
     const allChecked = selectedFacilities.size === default_units.length;
 
@@ -1085,7 +1106,7 @@ window.toggleAllFacilities = function() {
     drawDelMonthlyTable();
 }
 
-window.filterFacilityOptions = function() {
+window.filterFacilityOptions = function () {
     const query = document.getElementById('facilitySearchInput').value.toLowerCase();
     const options = document.querySelectorAll('#facilityOptionsList .multiselect-option');
     options.forEach(opt => {
@@ -1099,14 +1120,14 @@ window.filterFacilityOptions = function() {
 }
 
 // Close multi-select dropdown on click outside
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
     const dropdown = document.getElementById('facilityMultiselect');
     if (dropdown && !dropdown.contains(e.target)) {
         dropdown.classList.remove('open');
     }
 });
 
-window.handleDelMonthlyFilterChange = function() {
+window.handleDelMonthlyFilterChange = function () {
     drawDelMonthlyTable();
 }
 
@@ -1233,7 +1254,7 @@ function drawDelMonthlyTable() {
 }
 
 // Export Monthly Breakdown to Excel
-window.exportDelMonthlyToExcel = function() {
+window.exportDelMonthlyToExcel = function () {
     const selFY = document.getElementById('filterDelFY').value;
     if (!selFY) {
         showToast('Select a Financial Year first!', 'error');
@@ -1304,11 +1325,11 @@ window.exportDelMonthlyToExcel = function() {
     const sheetName = `${sheetLabel} - ${getFYLabel(fyStart)}`;
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName.substring(0, 31));
     worksheet['!cols'] = [{ wch: 18 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
-    XLSX.writeFile(workbook, `Delivery_Monthly_${getFYLabel(fyStart).replace(/\s/g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.writeFile(workbook, `Delivery_Monthly_${getFYLabel(fyStart).replace(/\s/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
 // Export Monthly Breakdown to PDF
-window.exportDelMonthlyToPDF = function() {
+window.exportDelMonthlyToPDF = function () {
     const selFY = document.getElementById('filterDelFY').value;
     if (!selFY) {
         showToast('Select a Financial Year first!', 'error');
@@ -1419,7 +1440,7 @@ window.exportDelMonthlyToPDF = function() {
             4: { halign: 'center' }, 5: { halign: 'center' }, 6: { halign: 'center' },
             7: { halign: 'center' }, 8: { halign: 'center' }, 9: { halign: 'center' }
         },
-        didParseCell: function(data) {
+        didParseCell: function (data) {
             if (data.row.index === tableData.length - 1) {
                 data.cell.styles.fontStyle = 'bold';
                 data.cell.styles.textColor = [122, 28, 49];
@@ -1429,18 +1450,18 @@ window.exportDelMonthlyToPDF = function() {
         margin: { top: 25, bottom: 15, left: 14, right: 14 }
     });
 
-    doc.save(`Delivery_Monthly_${getFYLabel(fyStart).replace(/\s/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`);
+    doc.save(`Delivery_Monthly_${getFYLabel(fyStart).replace(/\s/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 // ----------------------------------------------------
 // EXPORT TO EXCEL & PDF LOGIC
 // ----------------------------------------------------
-window.exportEcToExcel = function() {
+window.exportEcToExcel = function () {
     if (filteredEcData.length === 0) {
         showToast('No data to export!', 'error');
         return;
     }
-    
+
     // Format rows
     const rows = filteredEcData.map((row, index) => ({
         'Sl No': index + 1,
@@ -1491,15 +1512,15 @@ window.exportEcToExcel = function() {
     const worksheet = XLSX.utils.json_to_sheet(rows);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'EC Meeting Report');
-    
+
     // Set column widths
     const maxColWidth = [{ wch: 8 }, { wch: 12 }, { wch: 22 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }];
     worksheet['!cols'] = maxColWidth;
 
-    XLSX.writeFile(workbook, `EC_Meeting_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.writeFile(workbook, `EC_Meeting_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
-window.exportEcToPDF = function() {
+window.exportEcToPDF = function () {
     if (filteredEcData.length === 0) {
         showToast('No data to export!', 'error');
         return;
@@ -1525,7 +1546,7 @@ window.exportEcToPDF = function() {
 
     // Table Headers
     const headers = [['Sl No', 'Date', 'Facility', 'EC Att.', 'Teen. EC', 'F. Steril', 'M. Steril', 'IUCD', 'Antara', 'CC', 'OP', 'ECP', 'Chhaya']];
-    
+
     // Table Data
     const tableData = filteredEcData.map((row, index) => [
         index + 1,
@@ -1608,7 +1629,7 @@ window.exportEcToPDF = function() {
             11: { halign: 'center' },
             12: { halign: 'center' }
         },
-        didParseCell: function(data) {
+        didParseCell: function (data) {
             // Bold the grand total row
             if (data.row.index === tableData.length - 1) {
                 data.cell.styles.fontStyle = 'bold';
@@ -1620,10 +1641,10 @@ window.exportEcToPDF = function() {
     });
 
     // Save PDF
-    doc.save(`EC_Meeting_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+    doc.save(`EC_Meeting_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
-window.exportDelToExcel = function() {
+window.exportDelToExcel = function () {
     if (filteredDeliveryData.length === 0) {
         showToast('No data to export!', 'error');
         return;
@@ -1673,14 +1694,14 @@ window.exportDelToExcel = function() {
     const worksheet = XLSX.utils.json_to_sheet(rows);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Delivery Coverage');
-    
+
     const maxColWidth = [{ wch: 8 }, { wch: 15 }, { wch: 22 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
     worksheet['!cols'] = maxColWidth;
 
-    XLSX.writeFile(workbook, `Delivery_Coverage_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.writeFile(workbook, `Delivery_Coverage_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
-window.exportDelToPDF = function() {
+window.exportDelToPDF = function () {
     if (filteredDeliveryData.length === 0) {
         showToast('No data to export!', 'error');
         return;
@@ -1716,7 +1737,7 @@ window.exportDelToPDF = function() {
             'Live Birth', 'Still Birth', 'Abortion'
         ]
     ];
-    
+
     const tableData = filteredDeliveryData.map((row, index) => [
         index + 1,
         row.gp || '',
@@ -1792,7 +1813,7 @@ window.exportDelToPDF = function() {
             10: { halign: 'center' },
             11: { halign: 'center' }
         },
-        didParseCell: function(data) {
+        didParseCell: function (data) {
             if (data.row.index === tableData.length - 1) {
                 data.cell.styles.fontStyle = 'bold';
                 data.cell.styles.textColor = [122, 28, 49]; // Maroon
@@ -1802,7 +1823,473 @@ window.exportDelToPDF = function() {
         margin: { top: 25, bottom: 15, left: 14, right: 14 }
     });
 
-    doc.save(`Delivery_Coverage_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+    doc.save(`Delivery_Coverage_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+// ----------------------------------------------------
+// IDCF REPORT VIEW LOGIC (Google Sheet as Database)
+// ----------------------------------------------------
+
+// CSV parser no longer needed as we'll use JSON from Apps Script
+
+async function fetchIdcfData() {
+    const idcfTableBody = document.getElementById('idcfTableBody');
+    idcfTableBody.innerHTML = `
+        <tr class="loading-row">
+            <td colspan="12"><i class="fas fa-spinner fa-spin"></i> Fetching IDCF data from Google Sheet...</td>
+        </tr>
+    `;
+
+    try {
+        if (!IDCF_SCRIPT_URL) {
+            throw new Error('Apps Script URL is missing. Please add it to IDCF_SCRIPT_URL.');
+        }
+
+        // Fetch JSON data directly from the deployed Apps Script
+        const response = await fetch(IDCF_SCRIPT_URL);
+        if (!response.ok) throw new Error('Failed to fetch from Apps Script (HTTP ' + response.status + ')');
+        const json = await response.json();
+
+        if (!json.success) {
+            throw new Error(json.message || 'Unknown error from Apps Script');
+        }
+
+        const rows = json.data || [];
+
+        if (rows.length === 0) {
+            idcfData = [];
+        } else {
+            idcfData = rows.map(row => {
+                let reportingYear = '';
+                if (row.timestamp) {
+                    const d = new Date(row.timestamp);
+                    if (!isNaN(d.getTime())) {
+                        reportingYear = d.getFullYear().toString();
+                    }
+                }
+
+                return {
+                    _rowIndex: row._rowIndex,
+                    timestamp: row.timestamp || '',
+                    facility: (row.facility || '').toString().trim(),
+                    reporting_year: reportingYear,
+                    villages_served: parseInt(row.villages_served) || 0,
+                    villages_ors_distributed: parseInt(row.villages_ors_distributed) || 0,
+                    children_0_5: parseInt(row.children_0_5) || 0,
+                    children_given_ors: parseInt(row.children_given_ors) || 0,
+                    children_diarrhea: parseInt(row.children_diarrhea) || 0,
+                    diarrhea_children_ors: parseInt(row.diarrhea_children_ors) || 0,
+                    diarrhea_children_zinc: parseInt(row.diarrhea_children_zinc) || 0,
+                    danger_sign_referred: parseInt(row.danger_sign_referred) || 0,
+                    ors_corner_created: (row.ors_corner_created || '').toString().trim(),
+                    schools_handwashing: parseInt(row.schools_handwashing) || 0
+                };
+            });
+        }
+
+        updateIdcfDropdowns('init');
+        applyIdcfFilters();
+    } catch (error) {
+        console.error('Error fetching IDCF data:', error);
+        idcfTableBody.innerHTML = `
+            <tr class="no-data-row">
+                <td colspan="12" style="color: var(--color-maroon); font-weight: 600;">
+                    Error fetching data: ${error.message}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function updateIdcfDropdowns(source) {
+    const filterEl = document.getElementById('filterIdcfYear');
+    const selYear = filterEl.value || '';
+
+    const yearsSet = new Set();
+    idcfData.forEach(row => {
+        if (row.reporting_year) yearsSet.add(row.reporting_year);
+    });
+
+    if (source === 'init') {
+        const yearsArr = Array.from(yearsSet).sort().reverse();
+        filterEl.innerHTML = '<option value="">All Years</option>' +
+            yearsArr.map(y => `<option value="${y}">${y}</option>`).join('');
+        filterEl.value = selYear;
+    }
+}
+
+window.handleIdcfFilterChange = function () {
+    applyIdcfFilters();
+}
+
+function applyIdcfFilters() {
+    const fYear = document.getElementById('filterIdcfYear').value || '';
+
+    filteredIdcfData = idcfData.filter(row => {
+        if (fYear && row.reporting_year !== fYear) return false;
+        return true;
+    }).sort((a, b) => (a.facility || '').localeCompare(b.facility || ''));
+
+    // Report compliance stats
+    const reportedSet = new Set(filteredIdcfData.map(r => r.facility).filter(Boolean));
+    currentIdcfDefaulters = default_units.filter(sc => !reportedSet.has(sc));
+
+    document.getElementById('idcfToReport').textContent = default_units.length;
+    document.getElementById('idcfReported').textContent = reportedSet.size;
+    document.getElementById('idcfDefaulters').textContent = currentIdcfDefaulters.length;
+
+    drawIdcfTable();
+}
+
+function drawIdcfTable() {
+    const tbody = document.getElementById('idcfTableBody');
+    tbody.innerHTML = '';
+
+    if (filteredIdcfData.length === 0) {
+        tbody.innerHTML = `
+            <tr class="no-data-row">
+                <td colspan="12" class="text-center">No IDCF reports match your selected filters.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    let sVS = 0, sVO = 0, sC5 = 0, sCO = 0, sD = 0, sDO = 0, sDZ = 0, sDR = 0, sSH = 0;
+
+    filteredIdcfData.forEach(row => {
+        sVS += parseInt(row.villages_served) || 0;
+        sVO += parseInt(row.villages_ors_distributed) || 0;
+        sC5 += parseInt(row.children_0_5) || 0;
+        sCO += parseInt(row.children_given_ors) || 0;
+        sD += parseInt(row.children_diarrhea) || 0;
+        sDO += parseInt(row.diarrhea_children_ors) || 0;
+        sDZ += parseInt(row.diarrhea_children_zinc) || 0;
+        sDR += parseInt(row.danger_sign_referred) || 0;
+        sSH += parseInt(row.schools_handwashing) || 0;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="font-weight: 600;">${row.facility || ''}</td>
+            <td class="text-center">${row.villages_served ?? 0}</td>
+            <td class="text-center">${row.villages_ors_distributed ?? 0}</td>
+            <td class="text-center">${row.children_0_5 ?? 0}</td>
+            <td class="text-center">${row.children_given_ors ?? 0}</td>
+            <td class="text-center">${row.children_diarrhea ?? 0}</td>
+            <td class="text-center">${row.diarrhea_children_ors ?? 0}</td>
+            <td class="text-center">${row.diarrhea_children_zinc ?? 0}</td>
+            <td class="text-center">${row.danger_sign_referred ?? 0}</td>
+            <td class="text-center">${row.ors_corner_created || ''}</td>
+            <td class="text-center">${row.schools_handwashing ?? 0}</td>
+            <td class="text-center">
+                <button class="btn-action-edit" onclick="openEditIdcfModal(${row._rowIndex})" title="Edit Row">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-action-delete" onclick="openIdcfDeleteConfirm(${row._rowIndex})" title="Delete Row">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    // Grand Total sticky row
+    const totalTr = document.createElement('tr');
+    totalTr.className = 'grand-total-row';
+    totalTr.innerHTML = `
+        <td class="text-right">Grand Total</td>
+        <td class="text-center">${sVS}</td>
+        <td class="text-center">${sVO}</td>
+        <td class="text-center">${sC5}</td>
+        <td class="text-center">${sCO}</td>
+        <td class="text-center">${sD}</td>
+        <td class="text-center">${sDO}</td>
+        <td class="text-center">${sDZ}</td>
+        <td class="text-center">${sDR}</td>
+        <td class="text-center"></td>
+        <td class="text-center">${sSH}</td>
+        <td></td>
+    `;
+    tbody.appendChild(totalTr);
+}
+
+// --- IDCF EDIT ---
+window.openEditIdcfModal = function (rowIndex) {
+    const record = idcfData.find(r => r._rowIndex === rowIndex);
+    if (!record) return;
+
+    document.getElementById('edit-idcf-id').value = record._rowIndex;
+    document.getElementById('edit-idcf-facility').value = record.facility || '';
+    document.getElementById('edit-idcf-villages-served').value = record.villages_served ?? 0;
+    document.getElementById('edit-idcf-villages-ors').value = record.villages_ors_distributed ?? 0;
+    document.getElementById('edit-idcf-children-05').value = record.children_0_5 ?? 0;
+    document.getElementById('edit-idcf-children-ors').value = record.children_given_ors ?? 0;
+    document.getElementById('edit-idcf-diarrhea').value = record.children_diarrhea ?? 0;
+    document.getElementById('edit-idcf-diarrhea-ors').value = record.diarrhea_children_ors ?? 0;
+    document.getElementById('edit-idcf-diarrhea-zinc').value = record.diarrhea_children_zinc ?? 0;
+    document.getElementById('edit-idcf-danger-ref').value = record.danger_sign_referred ?? 0;
+    document.getElementById('edit-idcf-ors-corner').value = record.ors_corner_created || 'Yes';
+    document.getElementById('edit-idcf-schools-hw').value = record.schools_handwashing ?? 0;
+
+    document.getElementById('editIdcfModal').classList.add('active');
+}
+
+window.closeEditIdcfModal = function () {
+    document.getElementById('editIdcfModal').classList.remove('active');
+}
+
+window.saveIdcfRecord = async function (event) {
+    event.preventDefault();
+
+    if (!IDCF_SCRIPT_URL) {
+        showToast('Apps Script URL not configured. Deploy the script from the Google Sheet first (see idcf_apps_script.js).', 'error');
+        return;
+    }
+
+    const rowIndex = parseInt(document.getElementById('edit-idcf-id').value);
+    const btnSave = document.getElementById('btnSaveIdcfRecord');
+    btnSave.disabled = true;
+    btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+    // values array maps to columns B through L (sheet columns 2-12)
+    const values = [
+        document.getElementById('edit-idcf-facility').value,
+        parseInt(document.getElementById('edit-idcf-villages-served').value) || 0,
+        parseInt(document.getElementById('edit-idcf-villages-ors').value) || 0,
+        parseInt(document.getElementById('edit-idcf-children-05').value) || 0,
+        parseInt(document.getElementById('edit-idcf-children-ors').value) || 0,
+        parseInt(document.getElementById('edit-idcf-diarrhea').value) || 0,
+        parseInt(document.getElementById('edit-idcf-diarrhea-ors').value) || 0,
+        parseInt(document.getElementById('edit-idcf-diarrhea-zinc').value) || 0,
+        parseInt(document.getElementById('edit-idcf-danger-ref').value) || 0,
+        document.getElementById('edit-idcf-ors-corner').value,
+        parseInt(document.getElementById('edit-idcf-schools-hw').value) || 0
+    ];
+
+    try {
+        const response = await fetch(IDCF_SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'edit', rowIndex: rowIndex, values: values })
+        });
+        const text = await response.text();
+        let result;
+        try { result = JSON.parse(text); } catch (e) { throw new Error('Unexpected response from server'); }
+        if (!result.success) throw new Error(result.message || 'Update failed');
+
+        showToast('IDCF record updated successfully!');
+        closeEditIdcfModal();
+        // Re-fetch fresh data (row indices may shift)
+        idcfData = [];
+        fetchIdcfData();
+    } catch (error) {
+        console.error('Error updating IDCF record:', error);
+        showToast('Failed to update record: ' + error.message, 'error');
+    } finally {
+        btnSave.disabled = false;
+        btnSave.innerHTML = 'Save Changes';
+    }
+}
+
+// --- IDCF DELETE ---
+window.openIdcfDeleteConfirm = function (rowIndex) {
+    idcfRecordToDeleteId = rowIndex;
+    document.getElementById('confirmIdcfModal').classList.add('active');
+}
+
+window.closeIdcfConfirmModal = function () {
+    document.getElementById('confirmIdcfModal').classList.remove('active');
+    idcfRecordToDeleteId = null;
+}
+
+window.executeDeleteIdcfRecord = async function () {
+    if (!idcfRecordToDeleteId) return;
+
+    if (!IDCF_SCRIPT_URL) {
+        showToast('Apps Script URL not configured. Deploy the script from the Google Sheet first (see idcf_apps_script.js).', 'error');
+        return;
+    }
+
+    const btnDelete = document.getElementById('btnConfirmIdcfDelete');
+    btnDelete.disabled = true;
+    btnDelete.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
+    try {
+        const response = await fetch(IDCF_SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'delete', rowIndex: idcfRecordToDeleteId })
+        });
+        const text = await response.text();
+        let result;
+        try { result = JSON.parse(text); } catch (e) { throw new Error('Unexpected response from server'); }
+        if (!result.success) throw new Error(result.message || 'Delete failed');
+
+        showToast('IDCF record deleted successfully!');
+        closeIdcfConfirmModal();
+        // Re-fetch fresh data (row indices shift after delete)
+        idcfData = [];
+        fetchIdcfData();
+    } catch (error) {
+        console.error('Error deleting IDCF record:', error);
+        showToast('Failed to delete record: ' + error.message, 'error');
+    } finally {
+        btnDelete.disabled = false;
+        btnDelete.innerHTML = 'Yes, Delete';
+    }
+}
+
+// --- IDCF DEFAULTERS MODAL ---
+window.openIdcfDefaultersModal = function () {
+    const container = document.getElementById('idcfDefaultersListContainer');
+    container.innerHTML = '';
+
+    if (currentIdcfDefaulters.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 24px; color: var(--color-text-muted);">
+                <i class="fas fa-check-circle" style="color: #2e7d32; font-size: 2.5rem; margin-bottom: 12px; display: block;"></i>
+                All facilities have reported. No defaulters!
+            </div>
+        `;
+    } else {
+        const sortedDefaulters = [...currentIdcfDefaulters].sort();
+        container.innerHTML = sortedDefaulters.map(sc => `
+            <div class="defaulter-item">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${sc}</span>
+            </div>
+        `).join('');
+    }
+
+    document.getElementById('defaultersIdcfModal').classList.add('active');
+}
+
+window.closeIdcfDefaultersModal = function () {
+    document.getElementById('defaultersIdcfModal').classList.remove('active');
+}
+
+// --- IDCF EXPORT TO EXCEL ---
+window.exportIdcfToExcel = function () {
+    if (filteredIdcfData.length === 0) {
+        showToast('No data to export!', 'error');
+        return;
+    }
+
+    const rows = filteredIdcfData.map((row, index) => ({
+        'Sl No': index + 1,
+        'Facility': row.facility || '',
+        'Villages Served': row.villages_served ?? 0,
+        'Villages ORS Distributed': row.villages_ors_distributed ?? 0,
+        'Children (0-5 yrs)': row.children_0_5 ?? 0,
+        'Children Given ORS': row.children_given_ors ?? 0,
+        'Children with Diarrhea': row.children_diarrhea ?? 0,
+        'Diarrhea Children ORS': row.diarrhea_children_ors ?? 0,
+        'Diarrhea Children Zinc': row.diarrhea_children_zinc ?? 0,
+        'Danger Sign Referred': row.danger_sign_referred ?? 0,
+        'ORS Corner Created': row.ors_corner_created || '',
+        'Schools Hand Washing': row.schools_handwashing ?? 0
+    }));
+
+    let tVS = 0, tVO = 0, tC5 = 0, tCO = 0, tD = 0, tDO = 0, tDZ = 0, tDR = 0, tSH = 0;
+    filteredIdcfData.forEach(r => {
+        tVS += r.villages_served ?? 0; tVO += r.villages_ors_distributed ?? 0;
+        tC5 += r.children_0_5 ?? 0; tCO += r.children_given_ors ?? 0;
+        tD += r.children_diarrhea ?? 0; tDO += r.diarrhea_children_ors ?? 0;
+        tDZ += r.diarrhea_children_zinc ?? 0; tDR += r.danger_sign_referred ?? 0;
+        tSH += r.schools_handwashing ?? 0;
+    });
+    rows.push({
+        'Sl No': 'Grand Total', 'Facility': '',
+        'Villages Served': tVS, 'Villages ORS Distributed': tVO,
+        'Children (0-5 yrs)': tC5, 'Children Given ORS': tCO,
+        'Children with Diarrhea': tD, 'Diarrhea Children ORS': tDO,
+        'Diarrhea Children Zinc': tDZ, 'Danger Sign Referred': tDR,
+        'ORS Corner Created': '', 'Schools Hand Washing': tSH
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'IDCF Report');
+    worksheet['!cols'] = [
+        { wch: 8 }, { wch: 22 }, { wch: 14 }, { wch: 20 }, { wch: 14 }, { wch: 16 },
+        { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 16 }, { wch: 14 }, { wch: 16 }
+    ];
+    XLSX.writeFile(workbook, `IDCF_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+// --- IDCF EXPORT TO PDF ---
+window.exportIdcfToPDF = function () {
+    if (filteredIdcfData.length === 0) {
+        showToast('No data to export!', 'error');
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(122, 28, 49);
+    doc.text('IDCF Report', 14, 15);
+
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    const fYear = document.getElementById('filterIdcfYear').value || 'All';
+    doc.text(`Year: ${fYear}   Generated: ${new Date().toLocaleDateString()}`, 14, 21);
+
+    const headers = [['Sl No', 'Facility', 'Vlg Served', 'Vlg ORS', 'Child (0-5)', 'Child ORS', 'Diarrhea', 'Dia. ORS', 'Dia. Zinc', 'Danger Ref.', 'ORS Corner', 'Schools HW']];
+
+    const tableData = filteredIdcfData.map((row, index) => [
+        index + 1, row.facility || '',
+        row.villages_served ?? 0, row.villages_ors_distributed ?? 0,
+        row.children_0_5 ?? 0, row.children_given_ors ?? 0,
+        row.children_diarrhea ?? 0, row.diarrhea_children_ors ?? 0,
+        row.diarrhea_children_zinc ?? 0, row.danger_sign_referred ?? 0,
+        row.ors_corner_created || '', row.schools_handwashing ?? 0
+    ]);
+
+    let tVS = 0, tVO = 0, tC5 = 0, tCO = 0, tD = 0, tDO = 0, tDZ = 0, tDR = 0, tSH = 0;
+    filteredIdcfData.forEach(r => {
+        tVS += r.villages_served ?? 0; tVO += r.villages_ors_distributed ?? 0;
+        tC5 += r.children_0_5 ?? 0; tCO += r.children_given_ors ?? 0;
+        tD += r.children_diarrhea ?? 0; tDO += r.diarrhea_children_ors ?? 0;
+        tDZ += r.diarrhea_children_zinc ?? 0; tDR += r.danger_sign_referred ?? 0;
+        tSH += r.schools_handwashing ?? 0;
+    });
+    tableData.push(['Grand Total', '', tVS, tVO, tC5, tCO, tD, tDO, tDZ, tDR, '', tSH]);
+
+    doc.autoTable({
+        startY: 25,
+        head: headers,
+        body: tableData,
+        theme: 'grid',
+        headStyles: {
+            fillColor: [122, 28, 49],
+            textColor: [255, 255, 255],
+            fontSize: 7.5,
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        bodyStyles: { fontSize: 7.5, textColor: [50, 50, 50] },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
+        columnStyles: {
+            0: { cellWidth: 12, halign: 'center' },
+            1: { cellWidth: 38, fontStyle: 'bold' },
+            2: { halign: 'center' }, 3: { halign: 'center' },
+            4: { halign: 'center' }, 5: { halign: 'center' },
+            6: { halign: 'center' }, 7: { halign: 'center' },
+            8: { halign: 'center' }, 9: { halign: 'center' },
+            10: { halign: 'center' }, 11: { halign: 'center' }
+        },
+        didParseCell: function (data) {
+            if (data.row.index === tableData.length - 1) {
+                data.cell.styles.fontStyle = 'bold';
+                data.cell.styles.textColor = [122, 28, 49];
+                data.cell.styles.fillColor = [252, 235, 235];
+            }
+        },
+        margin: { top: 25, bottom: 15, left: 14, right: 14 }
+    });
+
+    doc.save(`IDCF_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 // ----------------------------------------------------
@@ -1835,12 +2322,12 @@ function showToast(msg, type = 'success') {
     toast.style.display = 'flex';
     toast.style.alignItems = 'center';
     toast.style.gap = '10px';
-    
+
     const icon = type === 'success' ? '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-exclamation-circle"></i>';
     toast.innerHTML = `${icon}<span>${msg}</span>`;
-    
+
     document.body.appendChild(toast);
-    
+
     // Animate opacity
     toast.style.opacity = '0';
     toast.style.transition = 'opacity 0.2s';
@@ -1853,7 +2340,7 @@ function showToast(msg, type = 'success') {
 }
 
 // DEFAULTERS MODAL ACTIONS
-window.openDefaultersModal = function() {
+window.openDefaultersModal = function () {
     const container = document.getElementById('defaultersListContainer');
     container.innerHTML = '';
 
@@ -1878,7 +2365,7 @@ window.openDefaultersModal = function() {
     document.getElementById('defaultersModal').classList.add('active');
 }
 
-window.closeDefaultersModal = function() {
+window.closeDefaultersModal = function () {
     document.getElementById('defaultersModal').classList.remove('active');
 }
 
@@ -1890,6 +2377,9 @@ window.addEventListener('click', (e) => {
     if (e.target === editDeliveryModal) closeEditDeliveryModal();
     if (e.target === confirmDeliveryModal) closeDeliveryConfirmModal();
     if (e.target === defaultersDeliveryModal) closeDelDefaultersModal();
+    if (e.target === document.getElementById('editIdcfModal')) closeEditIdcfModal();
+    if (e.target === document.getElementById('confirmIdcfModal')) closeIdcfConfirmModal();
+    if (e.target === document.getElementById('defaultersIdcfModal')) closeIdcfDefaultersModal();
 });
 
 // Escape key to close modals
@@ -1901,6 +2391,9 @@ document.addEventListener('keydown', (e) => {
         closeEditDeliveryModal();
         closeDeliveryConfirmModal();
         closeDelDefaultersModal();
+        closeEditIdcfModal();
+        closeIdcfConfirmModal();
+        closeIdcfDefaultersModal();
     }
 });
 
