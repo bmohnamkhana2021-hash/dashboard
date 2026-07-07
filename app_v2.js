@@ -71,6 +71,12 @@ let filteredIdcfData = [];
 let currentIdcfDefaulters = [];
 let idcfRecordToDeleteId = null;
 
+// Vitamin A Report State
+let vitaminAData = [];
+let filteredVitaminAData = [];
+let currentVitaminADefaulters = [];
+let vitaminARecordToDeleteId = null;
+
 // DOM Elements - Dashboard View
 const tableBody = document.getElementById('tableBody');
 const searchInput = document.getElementById('searchInput');
@@ -127,21 +133,25 @@ window.switchView = function (viewName) {
     const navEcReport = document.getElementById('navEcReport');
     const navDelivery = document.getElementById('navDelivery');
     const navIdcf = document.getElementById('navIdcf');
+    const navVitaminA = document.getElementById('navVitaminA');
 
     const dashboardView = document.getElementById('dashboardView');
     const ecReportView = document.getElementById('ecReportView');
     const deliveryView = document.getElementById('deliveryView');
     const idcfView = document.getElementById('idcfView');
+    const vitaminAView = document.getElementById('vitaminAView');
 
     navDashboard.classList.remove('active');
     navEcReport.classList.remove('active');
     if (navDelivery) navDelivery.classList.remove('active');
     if (navIdcf) navIdcf.classList.remove('active');
+    if (navVitaminA) navVitaminA.classList.remove('active');
 
     dashboardView.style.display = 'none';
     ecReportView.style.display = 'none';
     if (deliveryView) deliveryView.style.display = 'none';
     if (idcfView) idcfView.style.display = 'none';
+    if (vitaminAView) vitaminAView.style.display = 'none';
 
     if (viewName === 'dashboard') {
         navDashboard.classList.add('active');
@@ -170,6 +180,14 @@ window.switchView = function (viewName) {
             fetchIdcfData();
         } else {
             drawIdcfTable();
+        }
+    } else if (viewName === 'vitamin-a') {
+        if (navVitaminA) navVitaminA.classList.add('active');
+        if (vitaminAView) vitaminAView.style.display = 'block';
+        if (vitaminAData.length === 0) {
+            fetchVitaminAData();
+        } else {
+            drawVitaminATable();
         }
     }
 }
@@ -2388,6 +2406,9 @@ window.addEventListener('click', (e) => {
     if (e.target === document.getElementById('editIdcfModal')) closeEditIdcfModal();
     if (e.target === document.getElementById('confirmIdcfModal')) closeIdcfConfirmModal();
     if (e.target === document.getElementById('defaultersIdcfModal')) closeIdcfDefaultersModal();
+    if (e.target === document.getElementById('editVitaminAModal')) closeEditVitaminAModal();
+    if (e.target === document.getElementById('confirmVitaminAModal')) closeVitaminAConfirmModal();
+    if (e.target === document.getElementById('defaultersVitaminAModal')) closeVitaminADefaultersModal();
 });
 
 // Escape key to close modals
@@ -2402,8 +2423,371 @@ document.addEventListener('keydown', (e) => {
         closeEditIdcfModal();
         closeIdcfConfirmModal();
         closeIdcfDefaultersModal();
+        closeEditVitaminAModal();
+        closeVitaminAConfirmModal();
+        closeVitaminADefaultersModal();
     }
 });
+
+// ----------------------------------------------------
+// VITAMIN A REPORT VIEW LOGIC
+// ----------------------------------------------------
+async function fetchVitaminAData() {
+    const tbody = document.getElementById('vitaminATableBody');
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="12"><i class="fas fa-spinner fa-spin"></i> Fetching Vitamin A data...</td></tr>`;
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('vitamin_a_reports')
+            .select('*')
+            .order('report_year', { ascending: false })
+            .order('report_round', { ascending: false })
+            .limit(5000);
+
+        if (error) throw error;
+        vitaminAData = data || [];
+
+        updateVitaminADropdowns('init');
+        applyVitaminAFilters();
+    } catch (error) {
+        console.error('Error fetching Vitamin A data:', error);
+        tbody.innerHTML = `<tr class="no-data-row"><td colspan="12" style="color: var(--color-maroon); font-weight: 600;">Error fetching data: ${error.message}</td></tr>`;
+    }
+}
+
+function updateVitaminADropdowns(source) {
+    const filterYear = document.getElementById('filterVitaminAYear');
+    const filterRound = document.getElementById('filterVitaminARound');
+    const selYear = filterYear.value;
+    const selRound = filterRound.value;
+
+    const yearsSet = new Set();
+    const roundsSet = new Set();
+
+    vitaminAData.forEach(row => {
+        if (row.report_year) yearsSet.add(row.report_year);
+        if (selYear) {
+            if (row.report_year.toString() === selYear.toString() && row.report_round) {
+                roundsSet.add(row.report_round);
+            }
+        } else {
+            if (row.report_round) roundsSet.add(row.report_round);
+        }
+    });
+
+    if (source === 'init') {
+        const yearsArr = Array.from(yearsSet).sort().reverse();
+        filterYear.innerHTML = '<option value="">All Years</option>' + yearsArr.map(y => `<option value="${y}">${y}</option>`).join('');
+        filterYear.value = selYear;
+    }
+
+    if (source === 'init' || source === 'year') {
+        const roundsArr = Array.from(roundsSet).sort().reverse();
+        filterRound.innerHTML = '<option value="">All Rounds</option>' + roundsArr.map(r => `<option value="${r}">${r}</option>`).join('');
+        filterRound.value = roundsArr.includes(selRound) ? selRound : '';
+    }
+}
+
+window.handleVitaminAFilterChange = function (source) {
+    updateVitaminADropdowns(source);
+    applyVitaminAFilters();
+}
+
+function applyVitaminAFilters() {
+    const fYear = document.getElementById('filterVitaminAYear').value;
+    const fRound = document.getElementById('filterVitaminARound').value;
+
+    filteredVitaminAData = vitaminAData.filter(row => {
+        if (fYear && row.report_year.toString() !== fYear) return false;
+        if (fRound && row.report_round !== fRound) return false;
+        return true;
+    }).sort((a, b) => (a.reporting_unit || '').localeCompare(b.reporting_unit || ''));
+
+    const reportedSet = new Set(filteredVitaminAData.map(r => r.reporting_unit).filter(Boolean));
+    currentVitaminADefaulters = default_units.filter(sc => !reportedSet.has(sc));
+
+    document.getElementById('vitaminAToReport').textContent = default_units.length;
+    document.getElementById('vitaminAReported').textContent = reportedSet.size;
+    document.getElementById('vitaminADefaulters').textContent = currentVitaminADefaulters.length;
+
+    drawVitaminATable();
+}
+
+function drawVitaminATable() {
+    const tbody = document.getElementById('vitaminATableBody');
+    tbody.innerHTML = '';
+
+    if (filteredVitaminAData.length === 0) {
+        tbody.innerHTML = `<tr class="no-data-row"><td colspan="12" class="text-center">No Vitamin A reports match your filters.</td></tr>`;
+        return;
+    }
+
+    let s9d = 0, s9r = 0, s12d = 0, s12r = 0, s24d = 0, s24r = 0, s36d = 0, s36r = 0, std = 0, str = 0;
+
+    filteredVitaminAData.forEach(row => {
+        s9d += row.age_9_12_due ?? 0; s9r += row.age_9_12_rec ?? 0;
+        s12d += row.age_12_24_due ?? 0; s12r += row.age_12_24_rec ?? 0;
+        s24d += row.age_24_36_due ?? 0; s24r += row.age_24_36_rec ?? 0;
+        s36d += row.age_36_60_due ?? 0; s36r += row.age_36_60_rec ?? 0;
+        std += row.total_due ?? 0; str += row.total_rec ?? 0;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="font-weight: 600;">${row.reporting_unit || ''}</td>
+            <td class="text-center">${row.age_9_12_due ?? 0}</td><td class="text-center">${row.age_9_12_rec ?? 0}</td>
+            <td class="text-center">${row.age_12_24_due ?? 0}</td><td class="text-center">${row.age_12_24_rec ?? 0}</td>
+            <td class="text-center">${row.age_24_36_due ?? 0}</td><td class="text-center">${row.age_24_36_rec ?? 0}</td>
+            <td class="text-center">${row.age_36_60_due ?? 0}</td><td class="text-center">${row.age_36_60_rec ?? 0}</td>
+            <td class="text-center">${row.total_due ?? 0}</td><td class="text-center">${row.total_rec ?? 0}</td>
+            <td class="text-center">
+                <button class="btn-action-edit" onclick="openEditVitaminAModal(${row.id})" title="Edit Row"><i class="fas fa-edit"></i></button>
+                <button class="btn-action-delete" onclick="openVitaminADeleteConfirm(${row.id})" title="Delete Row"><i class="fas fa-trash"></i></button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    const totalTr = document.createElement('tr');
+    totalTr.className = 'grand-total-row';
+    totalTr.innerHTML = `
+        <td class="text-right font-bold">Grand Total</td>
+        <td class="text-center">${s9d}</td><td class="text-center">${s9r}</td>
+        <td class="text-center">${s12d}</td><td class="text-center">${s12r}</td>
+        <td class="text-center">${s24d}</td><td class="text-center">${s24r}</td>
+        <td class="text-center">${s36d}</td><td class="text-center">${s36r}</td>
+        <td class="text-center">${std}</td><td class="text-center">${str}</td>
+        <td></td>
+    `;
+    tbody.appendChild(totalTr);
+}
+
+window.openEditVitaminAModal = function (id) {
+    const record = vitaminAData.find(r => r.id === id);
+    if (!record) return;
+
+    document.getElementById('edit-va-id').value = record.id;
+    document.getElementById('edit-va-facility').value = record.reporting_unit || '';
+    document.getElementById('edit-va-round').value = record.report_round || '';
+
+    document.getElementById('edit-va-9-12-due').value = record.age_9_12_due ?? 0;
+    document.getElementById('edit-va-9-12-rec').value = record.age_9_12_rec ?? 0;
+    document.getElementById('edit-va-12-24-due').value = record.age_12_24_due ?? 0;
+    document.getElementById('edit-va-12-24-rec').value = record.age_12_24_rec ?? 0;
+    document.getElementById('edit-va-24-36-due').value = record.age_24_36_due ?? 0;
+    document.getElementById('edit-va-24-36-rec').value = record.age_24_36_rec ?? 0;
+    document.getElementById('edit-va-36-60-due').value = record.age_36_60_due ?? 0;
+    document.getElementById('edit-va-36-60-rec').value = record.age_36_60_rec ?? 0;
+
+    document.getElementById('editVitaminAModal').classList.add('active');
+}
+
+window.closeEditVitaminAModal = function () {
+    document.getElementById('editVitaminAModal').classList.remove('active');
+}
+
+window.saveVitaminARecord = async function (event) {
+    event.preventDefault();
+    const id = document.getElementById('edit-va-id').value;
+    const btnSave = document.getElementById('btnSaveVitaminARecord');
+    btnSave.disabled = true;
+    btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+    const d1 = parseInt(document.getElementById('edit-va-9-12-due').value) || 0;
+    const r1 = parseInt(document.getElementById('edit-va-9-12-rec').value) || 0;
+    const d2 = parseInt(document.getElementById('edit-va-12-24-due').value) || 0;
+    const r2 = parseInt(document.getElementById('edit-va-12-24-rec').value) || 0;
+    const d3 = parseInt(document.getElementById('edit-va-24-36-due').value) || 0;
+    const r3 = parseInt(document.getElementById('edit-va-24-36-rec').value) || 0;
+    const d4 = parseInt(document.getElementById('edit-va-36-60-due').value) || 0;
+    const r4 = parseInt(document.getElementById('edit-va-36-60-rec').value) || 0;
+
+    const totalDue = d1 + d2 + d3 + d4;
+    const totalRec = r1 + r2 + r3 + r4;
+
+    const updatedData = {
+        age_9_12_due: d1, age_9_12_rec: r1,
+        age_12_24_due: d2, age_12_24_rec: r2,
+        age_24_36_due: d3, age_24_36_rec: r3,
+        age_36_60_due: d4, age_36_60_rec: r4,
+        total_due: totalDue, total_rec: totalRec
+    };
+
+    try {
+        const { error } = await supabaseClient.from('vitamin_a_reports').update(updatedData).eq('id', id);
+        if (error) throw error;
+        showToast('Vitamin A record updated successfully!');
+        closeEditVitaminAModal();
+        fetchVitaminAData();
+    } catch (error) {
+        console.error('Error updating Vitamin A record:', error);
+        showToast('Failed to update record: ' + error.message, 'error');
+    } finally {
+        btnSave.disabled = false;
+        btnSave.innerHTML = 'Save Changes';
+    }
+}
+
+window.openVitaminADeleteConfirm = function (id) {
+    vitaminARecordToDeleteId = id;
+    document.getElementById('confirmVitaminAModal').classList.add('active');
+}
+
+window.closeVitaminAConfirmModal = function () {
+    document.getElementById('confirmVitaminAModal').classList.remove('active');
+    vitaminARecordToDeleteId = null;
+}
+
+window.executeDeleteVitaminARecord = async function () {
+    if (!vitaminARecordToDeleteId) return;
+    const btnDelete = document.getElementById('btnConfirmVitaminADelete');
+    btnDelete.disabled = true;
+    btnDelete.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
+    try {
+        const { error } = await supabaseClient.from('vitamin_a_reports').delete().eq('id', vitaminARecordToDeleteId);
+        if (error) throw error;
+        showToast('Vitamin A record deleted successfully!');
+        closeVitaminAConfirmModal();
+        fetchVitaminAData();
+    } catch (error) {
+        console.error('Error deleting Vitamin A record:', error);
+        showToast('Failed to delete record: ' + error.message, 'error');
+    } finally {
+        btnDelete.disabled = false;
+        btnDelete.innerHTML = 'Yes, Delete';
+    }
+}
+
+window.openVitaminADefaultersModal = function () {
+    const container = document.getElementById('vitaminADefaultersListContainer');
+    if (currentVitaminADefaulters.length === 0) {
+        container.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--color-text-muted);"><i class="fas fa-check-circle" style="color: #2e7d32; font-size: 2.5rem; margin-bottom: 12px; display: block;"></i>All facilities have reported. No defaulters!</div>`;
+    } else {
+        container.innerHTML = [...currentVitaminADefaulters].sort().map(sc => `<div class="defaulter-item"><i class="fas fa-exclamation-circle"></i><span>${sc}</span></div>`).join('');
+    }
+    document.getElementById('defaultersVitaminAModal').classList.add('active');
+}
+
+window.closeVitaminADefaultersModal = function () {
+    document.getElementById('defaultersVitaminAModal').classList.remove('active');
+}
+
+window.exportVitaminAToExcel = function () {
+    if (filteredVitaminAData.length === 0) {
+        showToast('No data to export!', 'error');
+        return;
+    }
+    const rows = filteredVitaminAData.map((row, index) => ({
+        'Sl No': index + 1,
+        'Facility': row.reporting_unit || '',
+        '9-12m Due': row.age_9_12_due ?? 0, '9-12m Rec': row.age_9_12_rec ?? 0,
+        '1-2y Due': row.age_12_24_due ?? 0, '1-2y Rec': row.age_12_24_rec ?? 0,
+        '2-3y Due': row.age_24_36_due ?? 0, '2-3y Rec': row.age_24_36_rec ?? 0,
+        '3-5y Due': row.age_36_60_due ?? 0, '3-5y Rec': row.age_36_60_rec ?? 0,
+        'Total Due': row.total_due ?? 0, 'Total Rec': row.total_rec ?? 0
+    }));
+
+    let s9d = 0, s9r = 0, s12d = 0, s12r = 0, s24d = 0, s24r = 0, s36d = 0, s36r = 0, std = 0, str = 0;
+    filteredVitaminAData.forEach(r => {
+        s9d += r.age_9_12_due ?? 0; s9r += r.age_9_12_rec ?? 0;
+        s12d += r.age_12_24_due ?? 0; s12r += r.age_12_24_rec ?? 0;
+        s24d += r.age_24_36_due ?? 0; s24r += r.age_24_36_rec ?? 0;
+        s36d += r.age_36_60_due ?? 0; s36r += r.age_36_60_rec ?? 0;
+        std += r.total_due ?? 0; str += r.total_rec ?? 0;
+    });
+    rows.push({
+        'Sl No': 'Grand Total', 'Facility': '',
+        '9-12m Due': s9d, '9-12m Rec': s9r,
+        '1-2y Due': s12d, '1-2y Rec': s12r,
+        '2-3y Due': s24d, '2-3y Rec': s24r,
+        '3-5y Due': s36d, '3-5y Rec': s36r,
+        'Total Due': std, 'Total Rec': str
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Vitamin A');
+    worksheet['!cols'] = [{ wch: 8 }, { wch: 22 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
+    XLSX.writeFile(workbook, `VitaminA_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+window.exportVitaminAToPDF = function () {
+    if (filteredVitaminAData.length === 0) {
+        showToast('No data to export!', 'error');
+        return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(122, 28, 49);
+    doc.text('Vitamin A Report', 14, 15);
+
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    const fYear = document.getElementById('filterVitaminAYear').value || 'All';
+    const fRound = document.getElementById('filterVitaminARound').value || 'All';
+    doc.text(`Year: ${fYear} | Round: ${fRound}   Generated: ${new Date().toLocaleDateString()}`, 14, 21);
+
+    const headers = [
+        [
+            { content: 'Sl No', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } },
+            { content: 'Facility', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } },
+            { content: '9-12m', colSpan: 2, styles: { halign: 'center' } },
+            { content: '1-2y', colSpan: 2, styles: { halign: 'center' } },
+            { content: '2-3y', colSpan: 2, styles: { halign: 'center' } },
+            { content: '3-5y', colSpan: 2, styles: { halign: 'center' } },
+            { content: 'Total', colSpan: 2, styles: { halign: 'center' } }
+        ],
+        ['Due', 'Rec', 'Due', 'Rec', 'Due', 'Rec', 'Due', 'Rec', 'Due', 'Rec']
+    ];
+
+    const tableData = filteredVitaminAData.map((row, index) => [
+        index + 1, row.reporting_unit || '',
+        row.age_9_12_due ?? 0, row.age_9_12_rec ?? 0,
+        row.age_12_24_due ?? 0, row.age_12_24_rec ?? 0,
+        row.age_24_36_due ?? 0, row.age_24_36_rec ?? 0,
+        row.age_36_60_due ?? 0, row.age_36_60_rec ?? 0,
+        row.total_due ?? 0, row.total_rec ?? 0
+    ]);
+
+    let s9d = 0, s9r = 0, s12d = 0, s12r = 0, s24d = 0, s24r = 0, s36d = 0, s36r = 0, std = 0, str = 0;
+    filteredVitaminAData.forEach(r => {
+        s9d += r.age_9_12_due ?? 0; s9r += r.age_9_12_rec ?? 0;
+        s12d += r.age_12_24_due ?? 0; s12r += r.age_12_24_rec ?? 0;
+        s24d += r.age_24_36_due ?? 0; s24r += r.age_24_36_rec ?? 0;
+        s36d += r.age_36_60_due ?? 0; s36r += r.age_36_60_rec ?? 0;
+        std += r.total_due ?? 0; str += r.total_rec ?? 0;
+    });
+    tableData.push(['Grand Total', '', s9d, s9r, s12d, s12r, s24d, s24r, s36d, s36r, std, str]);
+
+    doc.autoTable({
+        startY: 25, head: headers, body: tableData, theme: 'grid',
+        headStyles: { fillColor: [122, 28, 49], textColor: [255, 255, 255], fontSize: 8.5, fontStyle: 'bold', halign: 'center' },
+        bodyStyles: { fontSize: 8, textColor: [50, 50, 50] },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
+        columnStyles: {
+            0: { cellWidth: 15, halign: 'center' },
+            1: { cellWidth: 40, fontStyle: 'bold' },
+            2: { halign: 'center' }, 3: { halign: 'center' },
+            4: { halign: 'center' }, 5: { halign: 'center' },
+            6: { halign: 'center' }, 7: { halign: 'center' },
+            8: { halign: 'center' }, 9: { halign: 'center' },
+            10: { halign: 'center' }, 11: { halign: 'center' }
+        },
+        didParseCell: function (data) {
+            if (data.row.index === tableData.length - 1) {
+                data.cell.styles.fontStyle = 'bold';
+                data.cell.styles.textColor = [122, 28, 49];
+                data.cell.styles.fillColor = [252, 235, 235];
+            }
+        },
+        margin: { top: 25, bottom: 15, left: 14, right: 14 }
+    });
+    doc.save(`VitaminA_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
 
 // Start dashboard view
 initDashboard();
