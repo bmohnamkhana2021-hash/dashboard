@@ -2735,10 +2735,10 @@ window.exportVitaminAToPDF = function () {
         [
             { content: 'Sl No', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } },
             { content: 'Facility', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } },
-            { content: '9-12m', colSpan: 2, styles: { halign: 'center' } },
-            { content: '1-2y', colSpan: 2, styles: { halign: 'center' } },
-            { content: '2-3y', colSpan: 2, styles: { halign: 'center' } },
-            { content: '3-5y', colSpan: 2, styles: { halign: 'center' } },
+            { content: '9-12 Months', colSpan: 2, styles: { halign: 'center' } },
+            { content: '12-24 Months', colSpan: 2, styles: { halign: 'center' } },
+            { content: '24-36 Months', colSpan: 2, styles: { halign: 'center' } },
+            { content: '36-60 Months', colSpan: 2, styles: { halign: 'center' } },
             { content: 'Total', colSpan: 2, styles: { halign: 'center' } }
         ],
         ['Due', 'Rec', 'Due', 'Rec', 'Due', 'Rec', 'Due', 'Rec', 'Due', 'Rec']
