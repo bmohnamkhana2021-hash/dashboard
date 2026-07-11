@@ -1562,7 +1562,7 @@ async function fetchWpdData() {
     }
 
     try {
-        const tableCandidates = ['wpf_service_delivery_subcenter', 'wpf_service_delivery_sub_center', 'wpf_service_delivery_subcenters', 'delivery_coverage'];
+        const tableCandidates = ['delivery_coverage', 'wpf_service_delivery_subcenter', 'wpf_service_delivery_sub_center', 'wpf_service_delivery_subcenters'];
         let data = [];
         let lastError = null;
         let usedTable = '';
@@ -1574,14 +1574,19 @@ async function fetchWpdData() {
                     .select('*')
                     .limit(5000);
 
-                if (!error && Array.isArray(tableData)) {
+                if (error) {
+                    lastError = error;
+                    continue;
+                }
+
+                if (Array.isArray(tableData) && tableData.length > 0) {
                     data = tableData;
                     usedTable = tableName;
                     break;
                 }
 
-                if (error) {
-                    lastError = error;
+                if (Array.isArray(tableData) && tableData.length === 0) {
+                    lastError = { message: `Table ${tableName} returned no rows.` };
                 }
             } catch (innerError) {
                 lastError = innerError;
@@ -1593,7 +1598,7 @@ async function fetchWpdData() {
             populateWpdFilters();
             applyWpdFilters();
             if (wpdTableBody) {
-                const detail = lastError ? `Last error: ${lastError.message || 'Unknown error'}` : 'The table returned no rows.';
+                const detail = lastError ? `Last checked result: ${lastError.message || 'Unknown error'}` : 'The table returned no rows.';
                 wpdTableBody.innerHTML = `
                     <tr class="no-data-row">
                         <td colspan="8" style="color: var(--color-maroon); font-weight: 600; line-height: 1.6;">
