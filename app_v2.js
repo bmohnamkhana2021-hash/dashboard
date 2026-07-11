@@ -1562,14 +1562,52 @@ async function fetchWpdData() {
     }
 
     try {
-        const { data, error } = await supabaseClient
-            .from('wpf_service_delivery_subcenter')
-            .select('*')
-            .limit(5000);
+        const tableCandidates = ['wpf_service_delivery_subcenter', 'wpf_service_delivery_sub_center', 'wpf_service_delivery_subcenters', 'delivery_coverage'];
+        let data = [];
+        let lastError = null;
+        let usedTable = '';
 
-        if (error) throw error;
+        for (const tableName of tableCandidates) {
+            try {
+                const { data: tableData, error } = await supabaseClient
+                    .from(tableName)
+                    .select('*')
+                    .limit(5000);
 
-        wpdData = data || [];
+                if (!error && Array.isArray(tableData)) {
+                    data = tableData;
+                    usedTable = tableName;
+                    break;
+                }
+
+                if (error) {
+                    lastError = error;
+                }
+            } catch (innerError) {
+                lastError = innerError;
+            }
+        }
+
+        if (data.length === 0) {
+            wpdData = [];
+            populateWpdFilters();
+            applyWpdFilters();
+            if (wpdTableBody) {
+                const detail = lastError ? `Last error: ${lastError.message || 'Unknown error'}` : 'The table returned no rows.';
+                wpdTableBody.innerHTML = `
+                    <tr class="no-data-row">
+                        <td colspan="8" style="color: var(--color-maroon); font-weight: 600; line-height: 1.6;">
+                            No WPD records were returned from Supabase.<br/>
+                            Checked table(s): ${tableCandidates.join(', ')}<br/>
+                            ${detail}
+                        </td>
+                    </tr>
+                `;
+            }
+            return;
+        }
+
+        wpdData = data;
         populateWpdFilters();
         applyWpdFilters();
     } catch (error) {
@@ -1577,8 +1615,9 @@ async function fetchWpdData() {
         if (wpdTableBody) {
             wpdTableBody.innerHTML = `
                 <tr class="no-data-row">
-                    <td colspan="8" style="color: var(--color-maroon); font-weight: 600;">
-                        Error loading data from Supabase: ${error.message || 'Check database connection.'}
+                    <td colspan="8" style="color: var(--color-maroon); font-weight: 600; line-height: 1.6;">
+                        Error loading data from Supabase.<br/>
+                        ${error.message || 'Check database connection.'}
                     </td>
                 </tr>
             `;
@@ -1648,7 +1687,10 @@ function drawWpdTable() {
         wpdTableHead.innerHTML = '<th colspan="8">No WPD data available</th>';
         wpdTableBody.innerHTML = `
             <tr class="no-data-row">
-                <td colspan="8" class="text-center">No records match your selected filters.</td>
+                <td colspan="8" class="text-center" style="line-height: 1.6;">
+                    No records match the current filters.<br/>
+                    If you expected data, the Supabase table may be empty or inaccessible.
+                </td>
             </tr>
         `;
         return;
