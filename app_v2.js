@@ -62,6 +62,10 @@ let filteredDeliveryData = [];
 let currentDelDefaulters = [];
 let deliveryRecordToDeleteId = null;
 
+// WPD Report State
+let wpdData = [];
+let filteredWpdData = [];
+
 // IDCF Report State (Google Sheet as Database)
 const IDCF_SHEET_ID = '1UoB53GQLIRC_uTNczEsDqB8rWSmH6-pVSDWAiVC51IE';
 // Set this URL after deploying the Apps Script (see idcf_apps_script.js for instructions)
@@ -93,6 +97,13 @@ const reportTableBody = document.getElementById('reportTableBody');
 const filterDelYear = document.getElementById('filterDelYear');
 const filterDelMonth = document.getElementById('filterDelMonth');
 const deliveryTableBody = document.getElementById('deliveryTableBody');
+
+// DOM Elements - WPD View
+const filterWpdYear = document.getElementById('filterWpdYear');
+const filterWpdMonth = document.getElementById('filterWpdMonth');
+const filterWpdFacility = document.getElementById('filterWpdFacility');
+const wpdTableHead = document.getElementById('wpdTableHead');
+const wpdTableBody = document.getElementById('wpdTableBody');
 
 // DOM Elements - Modals & Forms
 const editModal = document.getElementById('editModal');
@@ -132,34 +143,38 @@ window.switchView = function (viewName) {
     const navDashboard = document.getElementById('navDashboard');
     const navEcReport = document.getElementById('navEcReport');
     const navDelivery = document.getElementById('navDelivery');
+    const navWpdReport = document.getElementById('navWpdReport');
     const navIdcf = document.getElementById('navIdcf');
     const navVitaminA = document.getElementById('navVitaminA');
 
     const dashboardView = document.getElementById('dashboardView');
     const ecReportView = document.getElementById('ecReportView');
     const deliveryView = document.getElementById('deliveryView');
+    const wpdReportView = document.getElementById('wpdReportView');
     const idcfView = document.getElementById('idcfView');
     const vitaminAView = document.getElementById('vitaminAView');
 
-    navDashboard.classList.remove('active');
-    navEcReport.classList.remove('active');
+    if (navDashboard) navDashboard.classList.remove('active');
+    if (navEcReport) navEcReport.classList.remove('active');
     if (navDelivery) navDelivery.classList.remove('active');
+    if (navWpdReport) navWpdReport.classList.remove('active');
     if (navIdcf) navIdcf.classList.remove('active');
     if (navVitaminA) navVitaminA.classList.remove('active');
 
-    dashboardView.style.display = 'none';
-    ecReportView.style.display = 'none';
+    if (dashboardView) dashboardView.style.display = 'none';
+    if (ecReportView) ecReportView.style.display = 'none';
     if (deliveryView) deliveryView.style.display = 'none';
+    if (wpdReportView) wpdReportView.style.display = 'none';
     if (idcfView) idcfView.style.display = 'none';
     if (vitaminAView) vitaminAView.style.display = 'none';
 
     if (viewName === 'dashboard') {
-        navDashboard.classList.add('active');
-        dashboardView.style.display = 'block';
+        if (navDashboard) navDashboard.classList.add('active');
+        if (dashboardView) dashboardView.style.display = 'block';
         renderTable();
     } else if (viewName === 'ec-report') {
-        navEcReport.classList.add('active');
-        ecReportView.style.display = 'block';
+        if (navEcReport) navEcReport.classList.add('active');
+        if (ecReportView) ecReportView.style.display = 'block';
         if (ecMeetingData.length === 0) {
             fetchEcMeetingData();
         } else {
@@ -172,6 +187,14 @@ window.switchView = function (viewName) {
             fetchDeliveryData();
         } else {
             drawDeliveryTable();
+        }
+    } else if (viewName === 'wpd-report') {
+        if (navWpdReport) navWpdReport.classList.add('active');
+        if (wpdReportView) wpdReportView.style.display = 'block';
+        if (wpdData.length === 0) {
+            fetchWpdData();
+        } else {
+            applyWpdFilters();
         }
     } else if (viewName === 'idcf') {
         if (navIdcf) navIdcf.classList.add('active');
@@ -1477,6 +1500,229 @@ window.exportDelMonthlyToPDF = function () {
     });
 
     doc.save(`Delivery_Monthly_${getFYLabel(fyStart).replace(/\s/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+// ----------------------------------------------------
+// WPD REPORT VIEW LOGIC
+// ----------------------------------------------------
+function getWpdRowValue(row, candidates) {
+    for (const candidate of candidates) {
+        if (!candidate) continue;
+        const value = row?.[candidate];
+        if (value !== undefined && value !== null && value !== '') return value;
+    }
+    return '';
+}
+
+function getWpdDisplayColumns(rows) {
+    const exclude = new Set(['id', 'created_at', 'updated_at', 'inserted_at', 'updated_on', 'timestamp']);
+    const priority = ['facility', 'facility_name', 'reporting_unit', 'subcenter', 'sub_center_name', 'subcenter_name', 'subcentre', 'sub_center', 'gp', 'gram_panchayat', 'reporting_year', 'year', 'reporting_month', 'month', 'date', 'meeting_date', 'reporting_date'];
+
+    const columns = [];
+    const seen = new Set();
+
+    priority.forEach(key => {
+        if (rows.some(row => row && Object.prototype.hasOwnProperty.call(row, key))) {
+            columns.push(key);
+            seen.add(key);
+        }
+    });
+
+    rows.forEach(row => {
+        Object.keys(row || {}).forEach(key => {
+            const normalized = key.toLowerCase();
+            if (seen.has(key) || exclude.has(normalized)) return;
+            columns.push(key);
+            seen.add(key);
+        });
+    });
+
+    return columns.filter(Boolean);
+}
+
+function formatWpdColumnName(key) {
+    return String(key)
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+function formatWpdCellValue(value) {
+    if (value === null || value === undefined || value === '') return '-';
+    if (typeof value === 'number') return value.toLocaleString();
+    return String(value);
+}
+
+async function fetchWpdData() {
+    if (wpdTableBody) {
+        wpdTableBody.innerHTML = `
+            <tr class="loading-row">
+                <td colspan="8"><i class="fas fa-spinner fa-spin"></i> Fetching records from Supabase...</td>
+            </tr>
+        `;
+    }
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('wpf_service_delivery_subcenter')
+            .select('*')
+            .limit(5000);
+
+        if (error) throw error;
+
+        wpdData = data || [];
+        populateWpdFilters();
+        applyWpdFilters();
+    } catch (error) {
+        console.error('Error fetching WPD data:', error);
+        if (wpdTableBody) {
+            wpdTableBody.innerHTML = `
+                <tr class="no-data-row">
+                    <td colspan="8" style="color: var(--color-maroon); font-weight: 600;">
+                        Error loading data from Supabase: ${error.message || 'Check database connection.'}
+                    </td>
+                </tr>
+            `;
+        }
+    }
+}
+
+function populateWpdFilters() {
+    if (!filterWpdYear || !filterWpdMonth || !filterWpdFacility) return;
+
+    const selectedYear = filterWpdYear.value || '';
+    const selectedMonth = filterWpdMonth.value || '';
+    const selectedFacility = filterWpdFacility.value || '';
+
+    const years = [...new Set(wpdData.map(row => getWpdRowValue(row, ['reporting_year', 'year'])).filter(Boolean))]
+        .map(v => String(v))
+        .sort((a, b) => Number(b) - Number(a));
+    const months = [...new Set(wpdData.map(row => getWpdRowValue(row, ['reporting_month', 'month'])).filter(Boolean))]
+        .map(v => String(v))
+        .sort();
+    const facilities = [...new Set(wpdData.map(row => getWpdRowValue(row, ['facility', 'facility_name', 'reporting_unit', 'subcenter', 'sub_center_name', 'subcenter_name', 'subcentre', 'sub_center'])).filter(Boolean))]
+        .map(v => String(v))
+        .sort((a, b) => a.localeCompare(b));
+
+    filterWpdYear.innerHTML = '<option value="">All Years</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
+    filterWpdMonth.innerHTML = '<option value="">All Months</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
+    filterWpdFacility.innerHTML = '<option value="">All Facilities</option>' + facilities.map(f => `<option value="${f}">${f}</option>`).join('');
+
+    filterWpdYear.value = years.includes(selectedYear) ? selectedYear : '';
+    filterWpdMonth.value = months.includes(selectedMonth) ? selectedMonth : '';
+    filterWpdFacility.value = facilities.includes(selectedFacility) ? selectedFacility : '';
+}
+
+window.handleWpdFilterChange = function () {
+    applyWpdFilters();
+}
+
+function applyWpdFilters() {
+    const fYear = filterWpdYear ? (filterWpdYear.value || '') : '';
+    const fMonth = filterWpdMonth ? (filterWpdMonth.value || '') : '';
+    const fFacility = filterWpdFacility ? (filterWpdFacility.value || '') : '';
+
+    filteredWpdData = wpdData.filter(row => {
+        const yearValue = getWpdRowValue(row, ['reporting_year', 'year']);
+        const monthValue = getWpdRowValue(row, ['reporting_month', 'month']);
+        const facilityValue = getWpdRowValue(row, ['facility', 'facility_name', 'reporting_unit', 'subcenter', 'sub_center_name', 'subcenter_name', 'subcentre', 'sub_center']);
+
+        if (fYear && String(yearValue) !== fYear) return false;
+        if (fMonth && String(monthValue) !== fMonth) return false;
+        if (fFacility && String(facilityValue) !== fFacility) return false;
+        return true;
+    });
+
+    const totalRowsEl = document.getElementById('wpdTotalRows');
+    if (totalRowsEl) totalRowsEl.textContent = filteredWpdData.length;
+
+    drawWpdTable();
+}
+
+function drawWpdTable() {
+    if (!wpdTableHead || !wpdTableBody) return;
+
+    wpdTableHead.innerHTML = '';
+    wpdTableBody.innerHTML = '';
+
+    if (filteredWpdData.length === 0) {
+        wpdTableHead.innerHTML = '<th colspan="8">No WPD data available</th>';
+        wpdTableBody.innerHTML = `
+            <tr class="no-data-row">
+                <td colspan="8" class="text-center">No records match your selected filters.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    const columns = getWpdDisplayColumns(filteredWpdData);
+    const headerCells = ['<th style="min-width: 70px;">Sl No</th>']
+        .concat(columns.map(column => `<th style="min-width: 140px;">${formatWpdColumnName(column)}</th>`));
+    wpdTableHead.innerHTML = headerCells.join('');
+
+    const rows = filteredWpdData.map((row, index) => {
+        const cells = columns.map(column => `<td>${formatWpdCellValue(getWpdRowValue(row, [column]))}</td>`);
+        return `<tr><td>${index + 1}</td>${cells.join('')}</tr>`;
+    });
+
+    wpdTableBody.innerHTML = rows.join('');
+}
+
+window.exportWpdToExcel = function () {
+    if (filteredWpdData.length === 0) {
+        showToast('No WPD data to export!', 'error');
+        return;
+    }
+
+    const columns = getWpdDisplayColumns(filteredWpdData);
+    const rows = filteredWpdData.map((row, index) => {
+        const output = { 'Sl No': index + 1 };
+        columns.forEach(column => {
+            output[formatWpdColumnName(column)] = getWpdRowValue(row, [column]);
+        });
+        return output;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'WPD Report');
+    XLSX.writeFile(workbook, `WPD_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+window.exportWpdToPDF = function () {
+    if (filteredWpdData.length === 0) {
+        showToast('No WPD data to export!', 'error');
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(122, 28, 49);
+    doc.text('WPD Report', 14, 15);
+
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 21);
+
+    const columns = getWpdDisplayColumns(filteredWpdData);
+    const headers = [['Sl No', ...columns.map(formatWpdColumnName)]];
+    const tableData = filteredWpdData.map((row, index) => [index + 1, ...columns.map(column => formatWpdCellValue(getWpdRowValue(row, [column])))]);
+
+    doc.autoTable({
+        startY: 25,
+        head: headers,
+        body: tableData,
+        theme: 'grid',
+        headStyles: { fillColor: [122, 28, 49], textColor: [255, 255, 255], fontSize: 8.5, fontStyle: 'bold', halign: 'center' },
+        bodyStyles: { fontSize: 8, textColor: [50, 50, 50] },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
+        margin: { top: 25, bottom: 15, left: 14, right: 14 }
+    });
+
+    doc.save(`WPD_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 // ----------------------------------------------------

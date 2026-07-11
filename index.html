@@ -68,6 +68,12 @@
                         Delivery Coverage
                     </a>
                 </li>
+                <li class="nav-item" id="navWpdReport">
+                    <a href="#" class="nav-link" onclick="switchView('wpd-report')">
+                        <span class="icon"><i class="fa-solid fa-file-lines"></i></span>
+                        WPD Report
+                    </a>
+                </li>
                 <li class="nav-item" id="navIdcf">
                     <a href="#" class="nav-link" onclick="switchView('idcf')">
                         <span class="icon"><i class="fa-solid fa-hand-holding-droplet"></i></span>
@@ -427,7 +433,70 @@
                 </section>
             </div>
 
-            <!-- VIEW 4: IDCF Report -->
+            <!-- VIEW 4: WPD Report -->
+            <div id="wpdReportView" style="display: none;">
+                <header class="topbar flex justify-between items-center w-full">
+                    <div class="header-titles">
+                        <h1>WPD Report</h1>
+                        <p>Facility wise breakdown from WPF service delivery subcenter data</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="fetchWpdData()" class="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition duration-150 flex items-center gap-1.5" title="Refresh Data">
+                            <i class="fas fa-sync-alt text-sm"></i> Refresh
+                        </button>
+                        <button onclick="exportWpdToExcel()" class="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md shadow-sm transition duration-150 flex items-center gap-1.5" title="Export to Excel">
+                            <i class="fas fa-file-excel text-sm"></i> Excel
+                        </button>
+                        <button onclick="exportWpdToPDF()" class="px-4 py-2 text-xs font-semibold text-white bg-rose-700 hover:bg-rose-800 rounded-md shadow-sm transition duration-150 flex items-center gap-1.5" title="Export to PDF">
+                            <i class="fas fa-file-pdf text-sm"></i> PDF
+                        </button>
+                    </div>
+                </header>
+
+                <section class="table-section">
+                    <div class="filter-toolbar">
+                        <div class="filter-group">
+                            <label for="filterWpdYear">Year</label>
+                            <select id="filterWpdYear" class="form-select" onchange="handleWpdFilterChange()">
+                                <option value="">All Years</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterWpdMonth">Month</label>
+                            <select id="filterWpdMonth" class="form-select" onchange="handleWpdFilterChange()">
+                                <option value="">All Months</option>
+                            </select>
+                        </div>
+                        <div class="filter-group" style="min-width: 280px;">
+                            <label for="filterWpdFacility">Facility</label>
+                            <select id="filterWpdFacility" class="form-select" onchange="handleWpdFilterChange()">
+                                <option value="">All Facilities</option>
+                            </select>
+                        </div>
+                        <div class="filter-stats">
+                            <div class="filter-stat-card">
+                                <span class="filter-stat-value" id="wpdTotalRows">0</span>
+                                <span class="filter-stat-label">Records</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="report-table-wrapper">
+                        <table class="report-grid-table">
+                            <thead>
+                                <tr id="wpdTableHead"></tr>
+                            </thead>
+                            <tbody id="wpdTableBody">
+                                <tr class="loading-row">
+                                    <td colspan="8">Loading WPD data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- VIEW 5: IDCF Report -->
             <div id="idcfView" style="display: none;">
                 <header class="topbar flex justify-between items-center w-full">
                     <div class="header-titles">
