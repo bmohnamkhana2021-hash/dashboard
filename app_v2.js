@@ -1747,6 +1747,15 @@ window.toggleWpdDateDropdown = function () {
     }
 }
 
+// Toggle WPD Filter Section (Collapsible Card)
+window.toggleWpdFilterSection = function () {
+    const filterCard = document.getElementById('wpdFilterCard') || document.querySelector('.wpd-filter-card');
+    if (filterCard) {
+        filterCard.classList.toggle('expanded');
+    }
+}
+
+
 window.toggleWpdDateCheckbox = function (date, event) {
     if (event.target.tagName === 'INPUT') {
         if (event.target.checked) selectedWpdDates.add(date);

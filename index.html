@@ -433,18 +433,21 @@
                 </section>
             </div>
 
-            <!-- VIEW 4: WPD Report -->
+            <!-- VIEW 4: WPD Report - Revamped -->
             <div id="wpdReportView" style="display: none;">
                 <header class="topbar flex justify-between items-center w-full">
-                    <div class="header-titles flex items-center gap-4"> <button onclick="toggleSidebar()" class="btn-premium-outline" style="padding: 6px 10px; margin-right: 8px;" title="Toggle Sidebar"><i class="fas fa-bars"></i></button> <div>
-                        <h1>WPD Report</h1>
-                        <p>Facility wise breakdown from WPF service delivery subcenter data</p>
+                    <div class="header-titles flex items-center gap-4">
+                        <button onclick="toggleSidebar()" class="btn-premium-outline" style="padding: 6px 10px; margin-right: 8px;" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+                        <div>
+                            <h1>WPD Report</h1>
+                            <p>Facility wise breakdown from WPF service delivery subcenter data</p>
+                        </div>
                     </div>
                     <div class="flex gap-2">
                         <button onclick="fetchWpdData()" class="btn-premium" title="Refresh Data">
                             <i class="fas fa-sync-alt text-sm"></i> Refresh
                         </button>
-                        <button onclick="openWpdDefaultersModal()" class="px-4 py-2 text-xs font-semibold text-maroon bg-maroon-light border border-maroon hover:bg-maroon hover:text-white rounded-md shadow-sm transition duration-150 flex items-center gap-1.5" title="View Defaulter Subcenters">
+                        <button onclick="openWpdDefaultersModal()" class="px-4 py-2 text-xs font-semibold text-white bg-maroon border border-maroon hover:bg-maroon/90 rounded-md shadow-sm transition duration-150 flex items-center gap-1.5" title="View Defaulter Subcenters">
                             <i class="fas fa-exclamation-circle text-sm"></i> Defaulters
                         </button>
                         <button onclick="exportWpdToExcel()" class="btn-premium" title="Export to Excel">
@@ -457,81 +460,115 @@
                 </header>
 
                 <section class="table-section">
-                    <div class="filter-toolbar">
-                        <div class="filter-group">
-                            <label for="filterWpdYear">Year</label>
-                            <select id="filterWpdYear" class="form-select" onchange="handleWpdFilterChange()">
-                                <option value="">All Years</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="filterWpdMonth">Month</label>
-                            <select id="filterWpdMonth" class="form-select" onchange="handleWpdFilterChange()">
-                                <option value="">All Months</option>
-                            </select>
-                        </div>
-                        <div class="filter-group" style="position: relative; min-width: 200px;">
-                            <label>Date</label>
-                            <div class="multiselect-dropdown" id="wpdDateMultiselect">
-                                <div class="multiselect-trigger" onclick="toggleWpdDateDropdown()">
-                                    <span class="multiselect-label" id="wpdDateMultiselectLabel">All Dates</span>
-                                    <span class="multiselect-badge" id="wpdDateMultiselectBadge" style="display: none;">0</span>
-                                    <i class="fas fa-chevron-down multiselect-arrow"></i>
-                                </div>
-                                <div class="multiselect-menu" id="wpdDateMultiselectMenu">
-                                    <div class="multiselect-search-wrap">
-                                        <input type="text" class="multiselect-search" id="wpdDateSearchInput" placeholder="Search dates..." oninput="filterWpdDateOptions()">
-                                    </div>
-                                    <div class="multiselect-option multiselect-option-all" onclick="toggleAllWpdDates()">
-                                        <input type="checkbox" id="wpdDateSelectAll" checked>
-                                        <label for="wpdDateSelectAll"><strong>Select All</strong></label>
-                                    </div>
-                                    <div class="multiselect-options-list" id="wpdDateOptionsList">
-                                        <!-- Checkboxes injected by JS -->
-                                    </div>
-                                </div>
+                    <!-- Compact KPI Stats -->
+                    <div class="wpd-kpi-cards">
+                        <div class="kpi-card kpi-primary">
+                            <div class="kpi-icon"><i class="fas fa-database"></i></div>
+                            <div class="kpi-content">
+                                <span class="kpi-value" id="wpdTotalRows">0</span>
+                                <span class="kpi-label">Total Records</span>
                             </div>
                         </div>
-                        <div class="filter-group" style="position: relative; min-width: 280px;">
-                            <label>Facility</label>
-                            <div class="multiselect-dropdown" id="wpdFacilityMultiselect">
-                                <div class="multiselect-trigger" onclick="toggleWpdFacilityDropdown()">
-                                    <span class="multiselect-label" id="wpdFacilityMultiselectLabel">All Facilities</span>
-                                    <span class="multiselect-badge" id="wpdFacilityMultiselectBadge" style="display: none;">0</span>
-                                    <i class="fas fa-chevron-down multiselect-arrow"></i>
-                                </div>
-                                <div class="multiselect-menu" id="wpdFacilityMultiselectMenu">
-                                    <div class="multiselect-search-wrap">
-                                        <input type="text" class="multiselect-search" id="wpdFacilitySearchInput" placeholder="Search facilities..." oninput="filterWpdFacilityOptions()">
-                                    </div>
-                                    <div class="multiselect-option multiselect-option-all" onclick="toggleAllWpdFacilities()">
-                                        <input type="checkbox" id="wpdFacilitySelectAll" checked>
-                                        <label for="wpdFacilitySelectAll"><strong>Select All</strong></label>
-                                    </div>
-                                    <div class="multiselect-options-list" id="wpdFacilityOptionsList">
-                                        <!-- Checkboxes injected by JS -->
-                                    </div>
-                                </div>
+                        <div class="kpi-card kpi-secondary">
+                            <div class="kpi-icon"><i class="fas fa-calendar-check"></i></div>
+                            <div class="kpi-content">
+                                <span class="kpi-value" id="wpdReported">0</span>
+                                <span class="kpi-label">Reported</span>
                             </div>
                         </div>
-                        <div class="filter-stats">
-                            <div class="filter-stat-card">
-                                <span class="filter-stat-value" id="wpdTotalRows">0</span>
-                                <span class="filter-stat-label">Records</span>
+                        <div class="kpi-card kpi-alert" onclick="openWpdDefaultersModal()" style="cursor: pointer;">
+                            <div class="kpi-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                            <div class="kpi-content">
+                                <span class="kpi-value" id="wpdDefaultersCount">0</span>
+                                <span class="kpi-label">Defaulters</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="report-table-wrapper" id="wpdTableWrapper">
-                        <table class="report-grid-table" id="wpdTable">
-                            <thead id="wpdTableHead"></thead>
-                            <tbody id="wpdTableBody">
-                                <tr class="loading-row">
-                                    <td colspan="8"><i class="fas fa-spinner fa-spin"></i> Loading WPD data...</td>
-                                </tr>
-                            </tbody>
-                            <tfoot id="wpdTableFoot"></tfoot>
-                        </table>
+                    <!-- Collapsible Filter Card -->
+                    <div class="wpd-filter-card expanded" id="wpdFilterCard">
+                        <div class="filter-card-header" onclick="toggleWpdFilterSection()">
+                            <div class="filter-card-title">
+                                <i class="fas fa-filter filter-card-icon"></i>
+                                <span>Filters & Options</span>
+                            </div>
+                            <i class="fas fa-chevron-down filter-card-toggle"></i>
+                        </div>
+                        <div class="filter-card-content" id="wpdFilterContent">
+                            <div class="filter-grid">
+                                <div class="filter-group">
+                                    <label for="filterWpdYear">Year</label>
+                                    <select id="filterWpdYear" class="form-select" onchange="handleWpdFilterChange()">
+                                        <option value="">All Years</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="filterWpdMonth">Month</label>
+                                    <select id="filterWpdMonth" class="form-select" onchange="handleWpdFilterChange()">
+                                        <option value="">All Months</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Date</label>
+                                    <div class="multiselect-dropdown" id="wpdDateMultiselect">
+                                        <div class="multiselect-trigger" onclick="toggleWpdDateDropdown()">
+                                            <span class="multiselect-label" id="wpdDateMultiselectLabel">All Dates</span>
+                                            <span class="multiselect-badge" id="wpdDateMultiselectBadge" style="display: none;">0</span>
+                                            <i class="fas fa-chevron-down multiselect-arrow"></i>
+                                        </div>
+                                        <div class="multiselect-menu" id="wpdDateMultiselectMenu">
+                                            <div class="multiselect-search-wrap">
+                                                <input type="text" class="multiselect-search" id="wpdDateSearchInput" placeholder="Search dates..." oninput="filterWpdDateOptions()">
+                                            </div>
+                                            <div class="multiselect-option multiselect-option-all" onclick="toggleAllWpdDates()">
+                                                <input type="checkbox" id="wpdDateSelectAll" checked>
+                                                <label for="wpdDateSelectAll"><strong>Select All</strong></label>
+                                            </div>
+                                            <div class="multiselect-options-list" id="wpdDateOptionsList">
+                                                <!-- Checkboxes injected by JS -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Facility</label>
+                                    <div class="multiselect-dropdown" id="wpdFacilityMultiselect">
+                                        <div class="multiselect-trigger" onclick="toggleWpdFacilityDropdown()">
+                                            <span class="multiselect-label" id="wpdFacilityMultiselectLabel">All Facilities</span>
+                                            <span class="multiselect-badge" id="wpdFacilityMultiselectBadge" style="display: none;">0</span>
+                                            <i class="fas fa-chevron-down multiselect-arrow"></i>
+                                        </div>
+                                        <div class="multiselect-menu" id="wpdFacilityMultiselectMenu">
+                                            <div class="multiselect-search-wrap">
+                                                <input type="text" class="multiselect-search" id="wpdFacilitySearchInput" placeholder="Search facilities..." oninput="filterWpdFacilityOptions()">
+                                            </div>
+                                            <div class="multiselect-option multiselect-option-all" onclick="toggleAllWpdFacilities()">
+                                                <input type="checkbox" id="wpdFacilitySelectAll" checked>
+                                                <label for="wpdFacilitySelectAll"><strong>Select All</strong></label>
+                                            </div>
+                                            <div class="multiselect-options-list" id="wpdFacilityOptionsList">
+                                                <!-- Checkboxes injected by JS -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="wpd-data-card">
+                        <div class="report-table-wrapper" id="wpdTableWrapper">
+                            <table class="report-grid-table" id="wpdTable">
+                                <thead id="wpdTableHead"></thead>
+                                <tbody id="wpdTableBody">
+                                    <tr class="loading-row">
+                                        <td colspan="8"><i class="fas fa-spinner fa-spin"></i> Loading WPD data...</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot id="wpdTableFoot"></tfoot>
+                            </table>
+                        </div>
                     </div>
                 </section>
             </div>
