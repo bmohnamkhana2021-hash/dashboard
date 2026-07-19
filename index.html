@@ -95,9 +95,16 @@
             <!-- VIEW 1: Dashboard (GP wise SC count) -->
             <div id="dashboardView">
                 <header class="topbar flex justify-between items-center w-full">
-                    <div class="header-titles flex items-center gap-4"> <button onclick="toggleSidebar()" class="btn-premium-outline" style="padding: 6px 10px; margin-right: 8px;" title="Toggle Sidebar"><i class="fas fa-bars"></i></button> <div>
-                        <h1>Gram Panchayat Overview</h1>
-                        <p>Interactive directory of Sub Centers</p>
+                    <div class="header-titles flex items-center gap-4">
+                        <button onclick="toggleSidebar()" class="btn-premium-outline" style="padding: 6px 10px; margin-right: 8px;" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+                        <div>
+                            <div class="header-status-pill">
+                                <i class="fas fa-circle"></i>
+                                <span>Live overview</span>
+                            </div>
+                            <h1>Gram Panchayat Overview</h1>
+                            <p>Interactive directory of Sub Centers</p>
+                        </div>
                     </div>
                     <!-- Actions -->
                     <div class="flex gap-2">
@@ -106,6 +113,12 @@
                         </button>
                     </div>
                 </header>
+
+                <section class="dashboard-hero-strip">
+                    <div class="hero-chip"><i class="fas fa-layer-group"></i> 7 Gram Panchayats</div>
+                    <div class="hero-chip"><i class="fas fa-hospital"></i> 37 Sub Centers</div>
+                    <div class="hero-chip"><i class="fas fa-shield-heart"></i> Unified reporting portal</div>
+                </section>
 
                 <!-- Stats KPI Banner -->
                 <section class="stats-banner">
@@ -403,7 +416,7 @@
 
                     <!-- Monthly Breakdown Table -->
                     <div class="report-table-wrapper">
-                        <tfoot id="delTableFoot"></tfoot></table><table class="report-grid-table" id="delMonthlyTable"><tfoot id="delTableFoot"></tfoot>
+                        <table class="report-grid-table" id="delMonthlyTable">
                             <thead>
                                 <tr>
                                     <th rowspan="2" style="vertical-align: middle; min-width: 120px;" class="text-center">Month</th>
@@ -428,6 +441,7 @@
                                     <td colspan="10" class="text-center">Select a Financial Year to view monthly breakdown.</td>
                                 </tr>
                             </tbody>
+                            <tfoot id="delTableFoot"></tfoot>
                         </table>
                     </div>
                 </section>

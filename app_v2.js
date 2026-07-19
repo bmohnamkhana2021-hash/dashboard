@@ -2,8 +2,27 @@
 const SUPABASE_URL = 'https://kijqcmumynutyhodxjwo.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_3vIQeWE4irMp3ni9vSw7fg_2sgzjurY';
 
-// Initialize Supabase Client
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Initialize Supabase Client safely so the UI can still load in restricted environments.
+const supabaseClient = window.supabase && typeof window.supabase.createClient === 'function'
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+    : null;
+
+function guardSupabaseAccess(targetBody, fallbackMessage = 'Unable to fetch data from the configured data source.') {
+    if (supabaseClient) return false;
+
+    if (targetBody) {
+        targetBody.innerHTML = `
+            <tr class="no-data-row">
+                <td colspan="13" style="color: var(--color-maroon); font-weight: 600;">
+                    ${fallbackMessage}
+                </td>
+            </tr>
+        `;
+    }
+
+    showToast('Supabase is unavailable in this browser context. Serve the page over HTTP and retry.', 'error');
+    return true;
+}
 
 // GP to SC (Sub Center) Mapping
 const gpMapping = {
@@ -327,6 +346,10 @@ window.refreshDashboard = function () {
 // EC MEETING REPORT VIEW LOGIC
 // ----------------------------------------------------
 async function fetchEcMeetingData() {
+    if (guardSupabaseAccess(reportTableBody, 'Supabase is not available. The EC report cannot load in this browser session.')) {
+        return;
+    }
+
     try {
         reportTableBody.innerHTML = `
             <tr class="loading-row">
@@ -1584,6 +1607,10 @@ async function fetchWpdData() {
     const dashContainer = document.getElementById('wpdTableBody');
     if (dashContainer) {
         dashContainer.innerHTML = '<tr class="loading-row"><td colspan="8"><i class="fas fa-spinner fa-spin"></i> Loading WPD data...</td></tr>';
+    }
+
+    if (guardSupabaseAccess(dashContainer, 'Supabase is not available. The WPD report cannot load in this browser session.')) {
+        return;
     }
 
     try {
@@ -3414,6 +3441,10 @@ document.addEventListener('keydown', (e) => {
 async function fetchVitaminAData() {
     const tbody = document.getElementById('vitaminATableBody');
     tbody.innerHTML = `<tr class="loading-row"><td colspan="12"><i class="fas fa-spinner fa-spin"></i> Fetching Vitamin A data...</td></tr>`;
+
+    if (guardSupabaseAccess(tbody, 'Supabase is not available. The Vitamin A report cannot load in this browser session.')) {
+        return;
+    }
 
     try {
         const { data, error } = await supabaseClient
