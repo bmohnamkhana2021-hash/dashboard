@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthCare Dashboard Portal</title>
+    <meta name="description" content="Ultra-modern healthcare data dashboard portal for facilities management and reporting.">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Dashboard CSS -->
+    <link href="dashboard.css?v=teal4" rel="stylesheet">
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF + AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+<!-- Animated Background Blobs -->
+<div class="bg-blob blob-1"></div>
+<div class="bg-blob blob-2"></div>
+<div class="bg-blob blob-3"></div>
+
+<div class="dashboard-container">
+
+    <!-- ======================== SIDEBAR ======================== -->
+    <nav class="sidebar" id="mainSidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon"><i class="fas fa-heartbeat"></i></div>
+                <div class="sidebar-logo-text">
+                    <span class="brand-name">HealthPortal</span>
+                    <span class="brand-sub">Namkhana Block</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-section-label">Reports</div>
+        <ul class="nav-menu">
+            <li class="nav-item active" id="navDashboard">
+                <a href="#" class="nav-link" onclick="switchView('dashboard');return false;">
+                    <span class="icon"><i class="fas fa-chart-pie"></i></span>
+                    GP Overview
+                </a>
+            </li>
+            <li class="nav-item" id="navEcReport">
+                <a href="#" class="nav-link" onclick="switchView('ec-report');return false;">
+                    <span class="icon"><i class="fas fa-clipboard-list"></i></span>
+                    EC Meeting
+                </a>
+            </li>
+            <li class="nav-item" id="navDelivery">
+                <a href="#" class="nav-link" onclick="switchView('delivery');return false;">
+                    <span class="icon"><i class="fas fa-baby"></i></span>
+                    Delivery Coverage
+                </a>
+            </li>
+            <li class="nav-item" id="navWpdReport">
+                <a href="#" class="nav-link" onclick="switchView('wpd-report');return false;">
+                    <span class="icon"><i class="fas fa-file-medical"></i></span>
+                    WPF Report
+                </a>
+            </li>
+            <li class="nav-item" id="navVitaminA">
+                <a href="#" class="nav-link" onclick="switchView('vitamin-a');return false;">
+                    <span class="icon"><i class="fas fa-capsules"></i></span>
+                    Vitamin A
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-footer-time" id="sidebarClock">Loading...</div>
+        </div>
+    </nav>
+
+    <!-- ======================== MAIN CONTENT ======================== -->
+    <main class="main-content">
+
+        <!-- ===================== VIEW 1: DASHBOARD ===================== -->
+        <div id="dashboardView">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="btn-menu-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+                    <div>
+                        <div class="topbar-page-title">Gram Panchayat Overview</div>
+                        <div class="topbar-breadcrumb"><span>Home</span><span class="crumb-sep">›</span><span class="crumb-current">GP Directory</span></div>
+                    </div>
+                </div>
+                <div class="topbar-actions">
+                    <button class="btn btn-primary" onclick="refreshDashboard()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                </div>
+            </header>
+
+            <!-- KPI Banner -->
+            <section class="stats-banner" id="dashboardStats">
+                <div class="stat-card">
+                    <div class="stat-card-icon pink"><span style="font-size:1.5rem">🏛️</span></div>
+                    <div class="stat-card-info">
+                        <div class="stat-card-value" id="statGps">7</div>
+                        <div class="stat-card-label">Gram Panchayats</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-icon rose"><span style="font-size:1.5rem">🏥</span></div>
+                    <div class="stat-card-info">
+                        <div class="stat-card-value" id="statScs">37</div>
+                        <div class="stat-card-label">Sub Centers</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- GP Table -->
+            <section class="table-section">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">Sub Center Directory</div>
+                        <div class="section-subtitle">GP-wise breakdown of all sub centers</div>
+                    </div>
+                    <div class="search-wrap">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search GP or Sub Center..." oninput="handleSearch()">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="smart-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width:60px">Sl</th>
+                                <th class="sortable" onclick="handleSort('gp')">Gram Panchayat <span class="sort-icon-wrapper"><i class="fas fa-sort" id="sortIconGp"></i></span></th>
+                                <th class="sortable text-center" onclick="handleSort('count')" style="width:150px">SC Count <span class="sort-icon-wrapper"><i class="fas fa-sort" id="sortIconCount"></i></span></th>
+                                <th>Sub Centers</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr class="loading-row"><td colspan="4"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===================== VIEW 2: EC MEETING ===================== -->
+        <div id="ecReportView" style="display:none">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="btn-menu-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+                    <div>
+                        <div class="topbar-page-title">EC Meeting Report</div>
+                        <div class="topbar-breadcrumb"><span>Home</span><span class="crumb-sep">›</span><span class="crumb-current">EC Meeting</span></div>
+                    </div>
+                </div>
+                <div class="topbar-actions">
+                    <button class="btn btn-primary" onclick="fetchEcMeetingData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    <button class="btn btn-outline" onclick="exportEcToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button class="btn btn-ghost" onclick="exportEcToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
+            </header>
+
+            <section class="table-section">
+                <div class="filter-toolbar">
+                    <div class="filter-group">
+                        <label for="filterYear">Year</label>
+                        <select id="filterYear" class="form-select" onchange="handleFilterChange('year')"><option value="">All Years</option></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterMonth">Month</label>
+                        <select id="filterMonth" class="form-select" onchange="handleFilterChange('month')"><option value="">All Months</option></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterDate">Date</label>
+                        <select id="filterDate" class="form-select" onchange="handleFilterChange('date')"><option value="">All Dates</option></select>
+                    </div>
+                    <div class="filter-stats">
+                        <div class="filter-stat-card">
+                            <span class="filter-stat-value" id="repToReport">37</span>
+                            <span class="filter-stat-label">To Report</span>
+                        </div>
+                        <div class="filter-stat-card">
+                            <span class="filter-stat-value" id="repReported">0</span>
+                            <span class="filter-stat-label">Reported</span>
+                        </div>
+                        <div class="filter-stat-card clickable danger" onclick="openDefaultersModal()">
+                            <span class="filter-stat-value" id="repDefaulters">0</span>
+                            <span class="filter-stat-label">Defaulters <i class="fas fa-external-link-alt" style="font-size:0.65rem"></i></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-table-wrapper">
+                    <table class="report-grid-table">
+                        <thead>
+                            <tr>
+                                <th style="min-width:100px">Date</th>
+                                <th style="min-width:180px">Facility</th>
+                                <th class="text-center" style="min-width:85px">EC Att.</th>
+                                <th class="text-center" style="min-width:85px">Teen EC</th>
+                                <th class="text-center" style="min-width:80px">F.Steril</th>
+                                <th class="text-center" style="min-width:80px">M.Steril</th>
+                                <th class="text-center" style="min-width:70px">IUCD</th>
+                                <th class="text-center" style="min-width:70px">Antara</th>
+                                <th class="text-center" style="min-width:70px">CC</th>
+                                <th class="text-center" style="min-width:70px">OP</th>
+                                <th class="text-center" style="min-width:70px">ECP</th>
+                                <th class="text-center" style="min-width:80px">Chhaya</th>
+                                <th class="text-center" style="min-width:110px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody">
+                            <tr class="loading-row"><td colspan="13"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===================== VIEW 3: DELIVERY COVERAGE ===================== -->
+        <div id="deliveryView" style="display:none">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="btn-menu-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+                    <div>
+                        <div class="topbar-page-title">Delivery Coverage</div>
+                        <div class="topbar-breadcrumb"><span>Home</span><span class="crumb-sep">›</span><span class="crumb-current">Delivery Coverage</span></div>
+                    </div>
+                </div>
+                <div class="topbar-actions" id="deliveryExportBtns">
+                    <button class="btn btn-primary" onclick="fetchDeliveryData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    <button class="btn btn-outline" onclick="exportDelToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button class="btn btn-ghost" onclick="exportDelToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
+            </header>
+
+            <!-- Sub-view tabs -->
+            <div class="del-view-tabs">
+                <button class="del-view-tab active" id="tabFacilityView" onclick="switchDelSubView('facility')"><i class="fas fa-hospital"></i> Facility View</button>
+                <button class="del-view-tab" id="tabMonthlyView" onclick="switchDelSubView('monthly')"><i class="fas fa-calendar-alt"></i> Monthly Breakdown (FY)</button>
+            </div>
+
+            <!-- SUB-VIEW A: Facility wise -->
+            <section class="table-section" id="delFacilitySection">
+                <div class="filter-toolbar">
+                    <div class="filter-group">
+                        <label for="filterDelYear">Year</label>
+                        <select id="filterDelYear" class="form-select" onchange="handleDelFilterChange('year')"><option value="">All Years</option></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterDelMonth">Month</label>
+                        <select id="filterDelMonth" class="form-select" onchange="handleDelFilterChange('month')"><option value="">All Months</option></select>
+                    </div>
+                    <div class="filter-stats">
+                        <div class="filter-stat-card">
+                            <span class="filter-stat-value" id="delToReport">37</span>
+                            <span class="filter-stat-label">To Report</span>
+                        </div>
+                        <div class="filter-stat-card">
+                            <span class="filter-stat-value" id="delReported">0</span>
+                            <span class="filter-stat-label">Reported</span>
+                        </div>
+                        <div class="filter-stat-card clickable danger" onclick="openDelDefaultersModal()">
+                            <span class="filter-stat-value" id="delDefaulters">0</span>
+                            <span class="filter-stat-label">Defaulters <i class="fas fa-external-link-alt" style="font-size:0.65rem"></i></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="report-table-wrapper">
+                    <table class="report-grid-table">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="vertical-align:middle;min-width:110px" class="text-center">GP</th>
+                                <th rowspan="2" style="vertical-align:middle;min-width:170px" class="text-center">Facility</th>
+                                <th colspan="3" class="text-center">Place of Delivery</th>
+                                <th colspan="3" class="text-center">Method of Delivery</th>
+                                <th colspan="3" class="text-center">Pregnancy Outcome</th>
+                                <th rowspan="2" style="vertical-align:middle;min-width:110px" class="text-center">Actions</th>
+                            </tr>
+                            <tr>
+                                <th class="text-center" style="min-width:70px">Home</th>
+                                <th class="text-center" style="min-width:70px">Govt</th>
+                                <th class="text-center" style="min-width:70px">Pvt</th>
+                                <th class="text-center" style="min-width:70px">Normal</th>
+                                <th class="text-center" style="min-width:70px">CS</th>
+                                <th class="text-center" style="min-width:70px">Total</th>
+                                <th class="text-center" style="min-width:80px">Live Birth</th>
+                                <th class="text-center" style="min-width:80px">Still Birth</th>
+                                <th class="text-center" style="min-width:80px">Abortion</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deliveryTableBody">
+                            <tr class="loading-row"><td colspan="12"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- SUB-VIEW B: Monthly Breakdown -->
+            <section class="table-section" id="delMonthlySection" style="display:none">
+                <div class="filter-toolbar">
+                    <div class="filter-group">
+                        <label for="filterDelFY">Financial Year</label>
+                        <select id="filterDelFY" class="form-select" onchange="handleDelMonthlyFilterChange()"><option value="">Select FY</option></select>
+                    </div>
+                    <div class="filter-group" style="min-width:260px;position:relative">
+                        <label>Facility</label>
+                        <div class="multiselect-dropdown" id="facilityMultiselect">
+                            <div class="multiselect-trigger" onclick="toggleFacilityDropdown()">
+                                <span class="multiselect-label" id="facilityMultiselectLabel">All Facilities</span>
+                                <span class="multiselect-badge" id="facilityMultiselectBadge" style="display:none">0</span>
+                                <i class="fas fa-chevron-down multiselect-arrow"></i>
+                            </div>
+                            <div class="multiselect-menu" id="facilityMultiselectMenu">
+                                <div class="multiselect-search-wrap"><input type="text" class="multiselect-search" id="facilitySearchInput" placeholder="Search facilities..." oninput="filterFacilityOptions()"></div>
+                                <div class="multiselect-option multiselect-option-all" onclick="toggleAllFacilities()"><input type="checkbox" id="facilitySelectAll" checked><label for="facilitySelectAll"><strong>Select All</strong></label></div>
+                                <div class="multiselect-options-list" id="facilityOptionsList"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-left:auto;display:flex;gap:8px;align-items:flex-end">
+                        <button class="btn btn-outline btn-sm" onclick="exportDelMonthlyToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+                        <button class="btn btn-ghost btn-sm" onclick="exportDelMonthlyToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                    </div>
+                </div>
+                <div class="report-table-wrapper">
+                    <table class="report-grid-table" id="delMonthlyTable">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="vertical-align:middle;min-width:110px" class="text-center">Month</th>
+                                <th colspan="3" class="text-center">Place of Delivery</th>
+                                <th colspan="3" class="text-center">Method of Delivery</th>
+                                <th colspan="3" class="text-center">Pregnancy Outcome</th>
+                            </tr>
+                            <tr>
+                                <th class="text-center" style="min-width:70px">Home</th>
+                                <th class="text-center" style="min-width:70px">Govt</th>
+                                <th class="text-center" style="min-width:70px">Pvt</th>
+                                <th class="text-center" style="min-width:70px">Normal</th>
+                                <th class="text-center" style="min-width:70px">CS</th>
+                                <th class="text-center" style="min-width:70px">Total</th>
+                                <th class="text-center" style="min-width:80px">Live Birth</th>
+                                <th class="text-center" style="min-width:80px">Still Birth</th>
+                                <th class="text-center" style="min-width:80px">Abortion</th>
+                            </tr>
+                        </thead>
+                        <tbody id="delMonthlyTableBody">
+                            <tr class="no-data-row"><td colspan="10" class="text-center">Select a Financial Year to view monthly breakdown.</td></tr>
+                        </tbody>
+                        <tfoot id="delTableFoot"></tfoot>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===================== VIEW 4: WPF REPORT ===================== -->
+        <div id="wpdReportView" style="display:none">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="btn-menu-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+                    <div>
+                        <div class="topbar-page-title">WPF Service Delivery Report</div>
+                        <div class="topbar-breadcrumb"><span>Home</span><span class="crumb-sep">›</span><span class="crumb-current">WPF Report</span></div>
+                    </div>
+                </div>
+                <div class="topbar-actions">
+                    <button class="btn btn-primary" onclick="fetchWpdData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    <button class="btn btn-outline" onclick="openWpdDefaultersModal()"><i class="fas fa-exclamation-circle"></i> Defaulters</button>
+                    <button class="btn btn-outline" onclick="exportWpdToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button class="btn btn-ghost" onclick="exportWpdToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
+            </header>
+
+            <section class="table-section">
+                <div class="filter-toolbar">
+                    <div class="filter-group">
+                        <label for="filterWpdYear">Year</label>
+                        <select id="filterWpdYear" class="form-select" onchange="handleWpdFilterChange()"><option value="">All Years</option></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterWpdMonth">Month</label>
+                        <select id="filterWpdMonth" class="form-select" onchange="handleWpdFilterChange()"><option value="">All Months</option></select>
+                    </div>
+                    <div class="filter-group" style="position:relative;min-width:180px">
+                        <label>Date</label>
+                        <div class="multiselect-dropdown" id="wpdDateMultiselect">
+                            <div class="multiselect-trigger" onclick="toggleWpdDateDropdown()">
+                                <span class="multiselect-label" id="wpdDateMultiselectLabel">All Dates</span>
+                                <span class="multiselect-badge" id="wpdDateMultiselectBadge" style="display:none">0</span>
+                                <i class="fas fa-chevron-down multiselect-arrow"></i>
+                            </div>
+                            <div class="multiselect-menu" id="wpdDateMultiselectMenu">
+                                <div class="multiselect-search-wrap"><input type="text" class="multiselect-search" id="wpdDateSearchInput" placeholder="Search dates..." oninput="filterWpdDateOptions()"></div>
+                                <div class="multiselect-option multiselect-option-all" onclick="toggleAllWpdDates()"><input type="checkbox" id="wpdDateSelectAll" checked><label for="wpdDateSelectAll"><strong>Select All</strong></label></div>
+                                <div class="multiselect-options-list" id="wpdDateOptionsList"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="filter-group" style="position:relative;min-width:240px">
+                        <label>Facility</label>
+                        <div class="multiselect-dropdown" id="wpdFacilityMultiselect">
+                            <div class="multiselect-trigger" onclick="toggleWpdFacilityDropdown()">
+                                <span class="multiselect-label" id="wpdFacilityMultiselectLabel">All Facilities</span>
+                                <span class="multiselect-badge" id="wpdFacilityMultiselectBadge" style="display:none">0</span>
+                                <i class="fas fa-chevron-down multiselect-arrow"></i>
+                            </div>
+                            <div class="multiselect-menu" id="wpdFacilityMultiselectMenu">
+                                <div class="multiselect-search-wrap"><input type="text" class="multiselect-search" id="wpdFacilitySearchInput" placeholder="Search facilities..." oninput="filterWpdFacilityOptions()"></div>
+                                <div class="multiselect-option multiselect-option-all" onclick="toggleAllWpdFacilities()"><input type="checkbox" id="wpdFacilitySelectAll" checked><label for="wpdFacilitySelectAll"><strong>Select All</strong></label></div>
+                                <div class="multiselect-options-list" id="wpdFacilityOptionsList"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="filter-stats">
+                        <div class="filter-stat-card">
+                            <span class="filter-stat-value" id="wpdTotalRows">0</span>
+                            <span class="filter-stat-label">Records</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="wpdTableWrapper">
+                    <!-- Dynamic tables will be injected here -->
+                </div>
+            </section>
+        </div>
+
+        <!-- ===================== VIEW 5: VITAMIN A ===================== -->
+        <div id="vitaminAView" style="display:none">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="btn-menu-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+                    <div>
+                        <div class="topbar-page-title">Vitamin A Report</div>
+                        <div class="topbar-breadcrumb"><span>Home</span><span class="crumb-sep">›</span><span class="crumb-current">Vitamin A</span></div>
+                    </div>
+                </div>
+                <div class="topbar-actions">
+                    <button class="btn btn-primary" onclick="fetchVitaminAData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    <button class="btn btn-outline" onclick="exportVitaminAToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button class="btn btn-ghost" onclick="exportVitaminAToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
+            </header>
+
+            <section class="table-section">
+                <div class="filter-toolbar">
+                    <div class="filter-group">
+                        <label for="filterVitaminAYear">Year</label>
+                        <select id="filterVitaminAYear" class="form-select" onchange="handleVitaminAFilterChange('year')"><option value="">All Years</option></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterVitaminARound">Round</label>
+                        <select id="filterVitaminARound" class="form-select" onchange="handleVitaminAFilterChange('round')"><option value="">All Rounds</option></select>
+                    </div>
+                    <div class="filter-stats">
+                        <div class="filter-stat-card">
+                            <span class="filter-stat-value" id="vitaminAToReport">37</span>
+                            <span class="filter-stat-label">To Report</span>
+                        </div>
+                        <div class="filter-stat-card">
+                            <span class="filter-stat-value" id="vitaminAReported">0</span>
+                            <span class="filter-stat-label">Reported</span>
+                        </div>
+                        <div class="filter-stat-card clickable danger" onclick="openVitaminADefaultersModal()">
+                            <span class="filter-stat-value" id="vitaminADefaulters">0</span>
+                            <span class="filter-stat-label">Defaulters <i class="fas fa-external-link-alt" style="font-size:0.65rem"></i></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-table-wrapper">
+                    <table class="report-grid-table">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="min-width:170px;vertical-align:middle">Facility</th>
+                                <th colspan="2" class="text-center">9-12 Months</th>
+                                <th colspan="2" class="text-center">12-24 Months</th>
+                                <th colspan="2" class="text-center">24-36 Months</th>
+                                <th colspan="2" class="text-center">36-60 Months</th>
+                                <th colspan="2" class="text-center">Total</th>
+                                <th rowspan="2" style="min-width:110px;vertical-align:middle" class="text-center">Actions</th>
+                            </tr>
+                            <tr>
+                                <th class="text-center" style="min-width:55px">Due</th><th class="text-center" style="min-width:55px">Rec.</th>
+                                <th class="text-center" style="min-width:55px">Due</th><th class="text-center" style="min-width:55px">Rec.</th>
+                                <th class="text-center" style="min-width:55px">Due</th><th class="text-center" style="min-width:55px">Rec.</th>
+                                <th class="text-center" style="min-width:55px">Due</th><th class="text-center" style="min-width:55px">Rec.</th>
+                                <th class="text-center" style="min-width:55px">Due</th><th class="text-center" style="min-width:55px">Rec.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vitaminATableBody">
+                            <tr class="loading-row"><td colspan="12"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+    </main>
+</div>
+
+<!-- ======================== MODALS ======================== -->
+
+<!-- EC Edit Modal -->
+<div id="editModal" class="modal-overlay">
+    <div class="modal-panel">
+        <div class="modal-header">
+            <div class="modal-title"><div class="modal-title-icon"><i class="fas fa-edit"></i></div> Edit EC Record</div>
+            <button class="modal-close" onclick="closeEditModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="editForm" onsubmit="saveRecord(event)">
+                <input type="hidden" id="edit-id">
+                <div class="form-grid form-grid-2" style="margin-bottom:16px">
+                    <div class="form-group"><label class="form-label">Facility (SC)</label><input type="text" id="edit-reporting-unit" class="form-input" readonly></div>
+                    <div class="form-group"><label class="form-label">Meeting Date</label><input type="date" id="edit-meeting-date" class="form-input" required></div>
+                </div>
+                <div class="form-grid form-grid-2" style="margin-bottom:16px">
+                    <div class="form-group"><label class="form-label">Total EC Attended</label><input type="number" id="edit-total-ec" class="form-input" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Teenage EC Attended</label><input type="number" id="edit-teenage-ec" class="form-input" min="0" required></div>
+                </div>
+                <div class="form-section-title"><i class="fas fa-boxes"></i> Contraceptive Methods</div>
+                <div class="form-grid form-grid-4" style="margin-top:12px;margin-bottom:20px">
+                    <div class="form-group"><label class="form-label">F.Steril</label><input type="number" id="edit-f-steril" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">M.Steril</label><input type="number" id="edit-m-steril" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">IUCD</label><input type="number" id="edit-iucd" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Antara</label><input type="number" id="edit-antara" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">CC</label><input type="number" id="edit-cc" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">OP</label><input type="number" id="edit-op" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">ECP</label><input type="number" id="edit-ecp" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Chhaya</label><input type="number" id="edit-chhaya" class="form-input text-center" min="0" required></div>
+                </div>
+                <div class="modal-footer" style="padding:0;border:none">
+                    <button type="button" class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveRecord">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- EC Confirm Delete -->
+<div id="confirmModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-sm" style="text-align:center;padding:32px 28px">
+        <div class="confirm-icon-wrap"><i class="fas fa-exclamation-triangle"></i></div>
+        <h2 style="font-size:1.15rem;font-weight:800;margin-bottom:8px;color:#1A0E14">Delete Record?</h2>
+        <p style="color:#8E7B85;font-size:0.87rem;margin-bottom:24px">This action is permanent and cannot be undone.</p>
+        <div style="display:flex;justify-content:center;gap:12px">
+            <button class="btn btn-ghost" onclick="closeConfirmModal()">Cancel</button>
+            <button class="btn btn-danger" id="btnConfirmDelete" onclick="executeDeleteRecord()">Yes, Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- EC Defaulters Modal -->
+<div id="defaultersModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-sm">
+        <div class="modal-header">
+            <div class="modal-title"><div class="modal-title-icon" style="background:linear-gradient(135deg,#FF6B6B,#EF4444)"><i class="fas fa-exclamation-circle"></i></div> EC Defaulter Facilities</div>
+            <button class="modal-close" onclick="closeDefaultersModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body"><div id="defaultersListContainer" class="defaulter-list-scroll"></div></div>
+        <div class="modal-footer"><button class="btn btn-ghost" onclick="closeDefaultersModal()">Close</button></div>
+    </div>
+</div>
+
+<!-- Delivery Edit Modal -->
+<div id="editDeliveryModal" class="modal-overlay">
+    <div class="modal-panel">
+        <div class="modal-header">
+            <div class="modal-title"><div class="modal-title-icon"><i class="fas fa-baby"></i></div> Edit Delivery Record</div>
+            <button class="modal-close" onclick="closeEditDeliveryModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="editDeliveryForm" onsubmit="saveDeliveryRecord(event)">
+                <input type="hidden" id="edit-del-id">
+                <div class="form-grid form-grid-3" style="margin-bottom:16px">
+                    <div class="form-group" style="grid-column:span 2"><label class="form-label">Facility (SC)</label><input type="text" id="edit-del-reporting-unit" class="form-input" readonly></div>
+                    <div class="form-group"><label class="form-label">Year</label><input type="text" id="edit-del-year" class="form-input" readonly></div>
+                    <div class="form-group"><label class="form-label">Month</label><input type="text" id="edit-del-month" class="form-input" readonly></div>
+                </div>
+                <div class="form-section-title"><i class="fas fa-baby-carriage"></i> Delivery Data Elements</div>
+                <div class="form-grid form-grid-3" style="margin-top:12px;margin-bottom:20px">
+                    <div class="form-group"><label class="form-label">Home Del.</label><input type="number" id="edit-del-home" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Govt Del.</label><input type="number" id="edit-del-govt" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Pvt Del.</label><input type="number" id="edit-del-private" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Normal Del.</label><input type="number" id="edit-del-normal" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">CS Del.</label><input type="number" id="edit-del-cs" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Total Del.</label><input type="number" id="edit-del-total" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Live Birth</label><input type="number" id="edit-del-live" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Still Birth</label><input type="number" id="edit-del-still" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Abortion</label><input type="number" id="edit-del-abortion" class="form-input text-center" min="0" required></div>
+                </div>
+                <div class="modal-footer" style="padding:0;border:none">
+                    <button type="button" class="btn btn-ghost" onclick="closeEditDeliveryModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveDeliveryRecord">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delivery Confirm Delete -->
+<div id="confirmDeliveryModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-sm" style="text-align:center;padding:32px 28px">
+        <div class="confirm-icon-wrap"><i class="fas fa-exclamation-triangle"></i></div>
+        <h2 style="font-size:1.15rem;font-weight:800;margin-bottom:8px;color:#1A0E14">Delete Delivery Record?</h2>
+        <p style="color:#8E7B85;font-size:0.87rem;margin-bottom:24px">This action is permanent and cannot be undone.</p>
+        <div style="display:flex;justify-content:center;gap:12px">
+            <button class="btn btn-ghost" onclick="closeDeliveryConfirmModal()">Cancel</button>
+            <button class="btn btn-danger" id="btnConfirmDelDelete" onclick="executeDeleteDeliveryRecord()">Yes, Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delivery Defaulters Modal -->
+<div id="defaultersDeliveryModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-sm">
+        <div class="modal-header">
+            <div class="modal-title"><div class="modal-title-icon" style="background:linear-gradient(135deg,#FF6B6B,#EF4444)"><i class="fas fa-exclamation-circle"></i></div> Delivery Defaulters</div>
+            <button class="modal-close" onclick="closeDelDefaultersModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body"><div id="delDefaultersListContainer" class="defaulter-list-scroll"></div></div>
+        <div class="modal-footer"><button class="btn btn-ghost" onclick="closeDelDefaultersModal()">Close</button></div>
+    </div>
+</div>
+
+<!-- Vitamin A Edit Modal -->
+<div id="editVitaminAModal" class="modal-overlay">
+    <div class="modal-panel">
+        <div class="modal-header">
+            <div class="modal-title"><div class="modal-title-icon"><i class="fas fa-capsules"></i></div> Edit Vitamin A Record</div>
+            <button class="modal-close" onclick="closeEditVitaminAModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="editVitaminAForm" onsubmit="saveVitaminARecord(event)">
+                <input type="hidden" id="edit-va-id">
+                <div class="form-grid form-grid-2" style="margin-bottom:16px">
+                    <div class="form-group"><label class="form-label">Facility</label><input type="text" id="edit-va-facility" class="form-input" readonly></div>
+                    <div class="form-group"><label class="form-label">Round</label><input type="text" id="edit-va-round" class="form-input" readonly></div>
+                </div>
+                <div class="form-section-title"><i class="fas fa-vial"></i> Vitamin A Doses</div>
+                <div class="form-grid form-grid-4" style="margin-top:12px;margin-bottom:20px">
+                    <div class="form-group"><label class="form-label">9-12m Due</label><input type="number" id="edit-va-9-12-due" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">9-12m Rec.</label><input type="number" id="edit-va-9-12-rec" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">1-2y Due</label><input type="number" id="edit-va-12-24-due" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">1-2y Rec.</label><input type="number" id="edit-va-12-24-rec" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">2-3y Due</label><input type="number" id="edit-va-24-36-due" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">2-3y Rec.</label><input type="number" id="edit-va-24-36-rec" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">3-5y Due</label><input type="number" id="edit-va-36-60-due" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">3-5y Rec.</label><input type="number" id="edit-va-36-60-rec" class="form-input text-center" min="0" required></div>
+                </div>
+                <div class="modal-footer" style="padding:0;border:none">
+                    <button type="button" class="btn btn-ghost" onclick="closeEditVitaminAModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveVitaminARecord">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Vitamin A Confirm Delete -->
+<div id="confirmVitaminAModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-sm" style="text-align:center;padding:32px 28px">
+        <div class="confirm-icon-wrap"><i class="fas fa-exclamation-triangle"></i></div>
+        <h2 style="font-size:1.15rem;font-weight:800;margin-bottom:8px;color:#1A0E14">Delete Record?</h2>
+        <p style="color:#8E7B85;font-size:0.87rem;margin-bottom:24px">This action is permanent and cannot be undone.</p>
+        <div style="display:flex;justify-content:center;gap:12px">
+            <button class="btn btn-ghost" onclick="closeVitaminAConfirmModal()">Cancel</button>
+            <button class="btn btn-danger" id="btnConfirmVitaminADelete" onclick="executeDeleteVitaminARecord()">Yes, Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Vitamin A Defaulters Modal -->
+<div id="defaultersVitaminAModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-sm">
+        <div class="modal-header">
+            <div class="modal-title"><div class="modal-title-icon" style="background:linear-gradient(135deg,#FF6B6B,#EF4444)"><i class="fas fa-exclamation-circle"></i></div> Vitamin A Defaulters</div>
+            <button class="modal-close" onclick="closeVitaminADefaultersModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body"><div id="vitaminADefaultersListContainer" class="defaulter-list-scroll"></div></div>
+        <div class="modal-footer"><button class="btn btn-ghost" onclick="closeVitaminADefaultersModal()">Close</button></div>
+    </div>
+</div>
+
+<!-- WPD Edit Modal -->
+<div id="editWpdModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-lg">
+        <div class="modal-header">
+            <div class="modal-title"><div class="modal-title-icon"><i class="fas fa-file-medical"></i></div> Edit WPF Record</div>
+            <button class="modal-close" onclick="closeEditWpdModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="editWpdForm" onsubmit="saveWpdRecord(event)">
+                <input type="hidden" id="edit-wpd-id">
+                <div id="editWpdFieldsContainer" style="margin-bottom:20px; display: flex; flex-direction: column; gap: 24px;"></div>
+                <div class="modal-footer" style="padding:0;border:none">
+                    <button type="button" class="btn btn-ghost" onclick="closeEditWpdModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveWpdRecord">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- WPD Confirm Delete -->
+<div id="confirmWpdModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-sm" style="text-align:center;padding:32px 28px">
+        <div class="confirm-icon-wrap"><i class="fas fa-exclamation-triangle"></i></div>
+        <h2 style="font-size:1.15rem;font-weight:800;margin-bottom:8px;color:#1A0E14">Delete WPF Record?</h2>
+        <p style="color:#8E7B85;font-size:0.87rem;margin-bottom:24px">This action is permanent and cannot be undone.</p>
+        <div style="display:flex;justify-content:center;gap:12px">
+            <button class="btn btn-ghost" onclick="closeWpdConfirmModal()">Cancel</button>
+            <button class="btn btn-danger" id="btnConfirmWpdDelete" onclick="executeDeleteWpdRecord()">Yes, Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- WPD Defaulters Modal -->
+<div id="defaultersWpdModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-sm">
+        <div class="modal-header">
+            <div class="modal-title"><div class="modal-title-icon" style="background:linear-gradient(135deg,#FF6B6B,#EF4444)"><i class="fas fa-exclamation-circle"></i></div> WPF Defaulters</div>
+            <button class="modal-close" onclick="closeWpdDefaultersModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body"><div id="wpdDefaultersListContainer" class="defaulter-list-scroll"></div></div>
+        <div class="modal-footer"><button class="btn btn-ghost" onclick="closeWpdDefaultersModal()">Close</button></div>
+    </div>
+</div>
+
+<!-- WPD Top/Bottom 5 Modal -->
+<div class="modal-overlay" id="wpdModal" onclick="closeWpdModal(event)">
+    <div class="modal-panel modal-panel-sm" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <div class="modal-title">
+                <div class="modal-title-icon" style="background: linear-gradient(135deg, var(--teal-500), var(--teal-600)); color: white;">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <span id="wpdModalTitle">Top 5 & Bottom 5</span>
+            </div>
+            <button class="modal-close" onclick="closeWpdModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" style="padding: 24px; max-height: 70vh; overflow-y: auto;">
+            <div class="modal-list-title" style="color: #059669; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-arrow-trend-up"></i> Top 5 Performing Facilities
+            </div>
+            <div id="wpdModalTopList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            
+            <div class="modal-list-title" style="color: #DC2626; margin-top: 24px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-arrow-trend-down"></i> Bottom 5 Facilities
+            </div>
+            <div id="wpdModalBottomList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer"></div>
+
+<!-- Mobile Bottom Nav -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <a class="mob-nav-item active" id="mobNavDashboard" onclick="switchView('dashboard')" href="#"><i class="fas fa-chart-pie"></i><span>Home</span></a>
+    <a class="mob-nav-item" id="mobNavEcReport" onclick="switchView('ec-report')" href="#"><i class="fas fa-clipboard-list"></i><span>EC</span></a>
+    <a class="mob-nav-item" id="mobNavDelivery" onclick="switchView('delivery')" href="#"><i class="fas fa-baby"></i><span>Delivery</span></a>
+    <a class="mob-nav-item" id="mobNavWpdReport" onclick="switchView('wpd-report')" href="#"><i class="fas fa-file-medical"></i><span>WPF</span></a>
+    <a class="mob-nav-item" id="mobNavVitaminA" onclick="switchView('vitamin-a')" href="#"><i class="fas fa-capsules"></i><span>Vit A</span></a>
+</nav>
+
+<!-- Main App Logic (copy of app_v2.js with minor adaptations) -->
+<script src="app_v2.js"></script>
+<script>
+// Clock
+function updateClock() {
+    const now = new Date();
+    const el = document.getElementById('sidebarClock');
+    if (el) el.textContent = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' • ' + now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// Sidebar toggle (new version)
+window.toggleSidebar = function() {
+    const sidebar = document.getElementById('mainSidebar');
+    sidebar.classList.toggle('collapsed');
+    sidebar.classList.toggle('mobile-open');
+}
+</script>
+</body>
+</html>
