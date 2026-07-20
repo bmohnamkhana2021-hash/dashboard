@@ -3,1319 +3,792 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Facilities Dashboard</title>
-    <meta name="description" content="Dashboard portal for facilities overview.">
-    <!-- Google Fonts for typography -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>HealthCare Dashboard Portal</title>
+    <meta name="description" content="Ultra-modern healthcare data dashboard portal for facilities management and reporting.">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Stylesheet -->
-    <link rel="stylesheet" href="index_premium.css">
-    <!-- Tailwind CSS v3 -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        maroon: {
-                            lightest: '#FFF0F5',
-                            light: '#FFB6C1',
-                            DEFAULT: '#FF758C',
-                            dark: '#FF647C'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- Supabase JS Library -->
+    <!-- Dashboard CSS -->
+    <link href="dashboard.css?v=teal4" rel="stylesheet">
+
+    <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- SheetJS (xlsx) for Excel export -->
+    <!-- SheetJS -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- jsPDF & jsPDF-AutoTable for PDF export -->
+    <!-- jsPDF + AutoTable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
-    <!-- Background Animated Blobs -->
-    <div class="bg-blob blob-1"></div>
-    <div class="bg-blob blob-2"></div>
-    <div class="bg-blob blob-3"></div>
 
-    <div class="dashboard-container">
-        <!-- Sidebar Navigation -->
-        <nav class="sidebar">
-            <div class="sidebar-header">
-                <h2>Portal</h2>
+<!-- Animated Background Blobs -->
+<div class="bg-blob blob-1"></div>
+<div class="bg-blob blob-2"></div>
+<div class="bg-blob blob-3"></div>
+
+<div class="dashboard-container">
+
+    <!-- ======================== SIDEBAR ======================== -->
+    <nav class="sidebar" id="mainSidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon"><i class="fas fa-heartbeat"></i></div>
+                <div class="sidebar-logo-text">
+                    <span class="brand-name">HealthPortal</span>
+                    <span class="brand-sub">Namkhana Block</span>
+                </div>
             </div>
-            <ul class="nav-menu">
-                <li class="nav-item active" id="navDashboard">
-                    <a href="#" class="nav-link" onclick="switchView('dashboard')">
-                        <span class="icon"><i class="fa-solid fa-chart-pie"></i></span>
-                        Dashboard
-                    </a>
-                </li>
-                <li class="nav-item" id="navEcReport">
-                    <a href="#" class="nav-link" onclick="switchView('ec-report')">
-                        <span class="icon"><i class="fa-solid fa-clipboard-list"></i></span>
-                        EC Meeting Report
-                    </a>
-                </li>
-                <li class="nav-item" id="navDelivery">
-                    <a href="#" class="nav-link" onclick="switchView('delivery')">
-                        <span class="icon"><i class="fa-solid fa-person-breastfeeding"></i></span>
-                        Delivery Coverage
-                    </a>
-                </li>
-                <li class="nav-item" id="navWpdReport">
-                    <a href="#" class="nav-link" onclick="switchView('wpd-report')">
-                        <span class="icon"><i class="fa-solid fa-file-lines"></i></span>
-                        WPD Report
-                    </a>
-                </li>
-                <li class="nav-item" id="navIdcf">
-                    <a href="#" class="nav-link" onclick="switchView('idcf')">
-                        <span class="icon"><i class="fa-solid fa-hand-holding-droplet"></i></span>
-                        IDCF
-                    </a>
-                </li>
-                <li class="nav-item" id="navVitaminA">
-                    <a href="#" class="nav-link" onclick="switchView('vitamin-a')">
-                        <span class="icon"><i class="fa-solid fa-vial"></i></span>
-                        Vita A oil
-                    </a>
-                </li>
-            </ul>
-        </nav>
+        </div>
 
-        <!-- Main Content Area -->
-        <main class="main-content">
-            
-            <!-- VIEW 1: Dashboard (GP wise SC count) -->
-            <div id="dashboardView">
-                <header class="topbar flex justify-between items-center w-full">
-                    <div class="header-titles flex items-center gap-4">
-                        <button onclick="toggleSidebar()" class="btn-premium-outline" style="padding: 6px 10px; margin-right: 8px;" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
-                        <div>
-                            <div class="header-status-pill">
-                                <i class="fas fa-circle"></i>
-                                <span>Live overview</span>
-                            </div>
-                            <h1>Gram Panchayat Overview</h1>
-                            <p>Interactive directory of Sub Centers</p>
+        <div class="sidebar-section-label">Reports</div>
+        <ul class="nav-menu">
+            <li class="nav-item active" id="navDashboard">
+                <a href="#" class="nav-link" onclick="switchView('dashboard');return false;">
+                    <span class="icon"><i class="fas fa-chart-pie"></i></span>
+                    GP Overview
+                </a>
+            </li>
+            <li class="nav-item" id="navEcReport">
+                <a href="#" class="nav-link" onclick="switchView('ec-report');return false;">
+                    <span class="icon"><i class="fas fa-clipboard-list"></i></span>
+                    EC Meeting
+                </a>
+            </li>
+            <li class="nav-item" id="navDelivery">
+                <a href="#" class="nav-link" onclick="switchView('delivery');return false;">
+                    <span class="icon"><i class="fas fa-baby"></i></span>
+                    Delivery Coverage
+                </a>
+            </li>
+            <li class="nav-item" id="navWpdReport">
+                <a href="#" class="nav-link" onclick="switchView('wpd-report');return false;">
+                    <span class="icon"><i class="fas fa-file-medical"></i></span>
+                    WPF Report
+                </a>
+            </li>
+            <li class="nav-item" id="navVitaminA">
+                <a href="#" class="nav-link" onclick="switchView('vitamin-a');return false;">
+                    <span class="icon"><i class="fas fa-capsules"></i></span>
+                    Vitamin A
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-footer-time" id="sidebarClock">Loading...</div>
+        </div>
+    </nav>
+
+    <!-- ======================== MAIN CONTENT ======================== -->
+    <main class="main-content">
+
+        <!-- ===================== VIEW 1: DASHBOARD ===================== -->
+        <div id="dashboardView">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="btn-menu-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+                    <div>
+                        <div class="topbar-page-title">Gram Panchayat Overview</div>
+                        <div class="topbar-breadcrumb"><span>Home</span><span class="crumb-sep">›</span><span class="crumb-current">GP Directory</span></div>
+                    </div>
+                </div>
+                <div class="topbar-actions">
+                    <button class="btn btn-primary" onclick="refreshDashboard()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                </div>
+            </header>
+
+            <!-- KPI Banner -->
+            <section class="stats-banner" id="dashboardStats">
+                <div class="stat-card">
+                    <div class="stat-card-icon pink"><span style="font-size:1.5rem">🏛️</span></div>
+                    <div class="stat-card-info">
+                        <div class="stat-card-value" id="statGps">7</div>
+                        <div class="stat-card-label">Gram Panchayats</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-icon rose"><span style="font-size:1.5rem">🏥</span></div>
+                    <div class="stat-card-info">
+                        <div class="stat-card-value" id="statScs">37</div>
+                        <div class="stat-card-label">Sub Centers</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- GP Table -->
+            <section class="table-section">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">Sub Center Directory</div>
+                        <div class="section-subtitle">GP-wise breakdown of all sub centers</div>
+                    </div>
+                    <div class="search-wrap">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search GP or Sub Center..." oninput="handleSearch()">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="smart-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width:60px">Sl</th>
+                                <th class="sortable" onclick="handleSort('gp')">Gram Panchayat <span class="sort-icon-wrapper"><i class="fas fa-sort" id="sortIconGp"></i></span></th>
+                                <th class="sortable text-center" onclick="handleSort('count')" style="width:150px">SC Count <span class="sort-icon-wrapper"><i class="fas fa-sort" id="sortIconCount"></i></span></th>
+                                <th>Sub Centers</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr class="loading-row"><td colspan="4"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===================== VIEW 2: EC MEETING ===================== -->
+        <div id="ecReportView" style="display:none">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="btn-menu-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+                    <div>
+                        <div class="topbar-page-title">EC Meeting Report</div>
+                        <div class="topbar-breadcrumb"><span>Home</span><span class="crumb-sep">›</span><span class="crumb-current">EC Meeting</span></div>
+                    </div>
+                </div>
+                <div class="topbar-actions">
+                    <button class="btn btn-primary" onclick="fetchEcMeetingData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    <button class="btn btn-outline" onclick="exportEcToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button class="btn btn-ghost" onclick="exportEcToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
+            </header>
+
+            <section class="table-section">
+                <div class="filter-toolbar">
+                    <div class="filter-group">
+                        <label for="filterYear">Year</label>
+                        <select id="filterYear" class="form-select" onchange="handleFilterChange('year')"><option value="">All Years</option></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterMonth">Month</label>
+                        <select id="filterMonth" class="form-select" onchange="handleFilterChange('month')"><option value="">All Months</option></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterDate">Date</label>
+                        <select id="filterDate" class="form-select" onchange="handleFilterChange('date')"><option value="">All Dates</option></select>
+                    </div>
+                    <div class="filter-stats">
+                        <div class="filter-stat-card">
+                            <span class="filter-stat-value" id="repToReport">37</span>
+                            <span class="filter-stat-label">To Report</span>
+                        </div>
+                        <div class="filter-stat-card">
+                            <span class="filter-stat-value" id="repReported">0</span>
+                            <span class="filter-stat-label">Reported</span>
+                        </div>
+                        <div class="filter-stat-card clickable danger" onclick="openDefaultersModal()">
+                            <span class="filter-stat-value" id="repDefaulters">0</span>
+                            <span class="filter-stat-label">Defaulters <i class="fas fa-external-link-alt" style="font-size:0.65rem"></i></span>
                         </div>
                     </div>
-                    <!-- Actions -->
-                    <div class="flex gap-2">
-                        <button onclick="refreshDashboard()" class="btn-premium" title="Refresh Data">
-                            <i class="fas fa-sync-alt text-sm"></i> Refresh
-                        </button>
-                    </div>
-                </header>
-
-                <section class="dashboard-hero-strip">
-                    <div class="hero-chip"><i class="fas fa-layer-group"></i> 7 Gram Panchayats</div>
-                    <div class="hero-chip"><i class="fas fa-hospital"></i> 37 Sub Centers</div>
-                    <div class="hero-chip"><i class="fas fa-shield-heart"></i> Unified reporting portal</div>
-                </section>
-
-                <!-- Stats KPI Banner -->
-                <section class="stats-banner">
-                    <div class="stat-widget">
-                        <div class="widget-icon">🏛️</div>
-                        <div class="widget-info">
-                            <span class="widget-value" id="statGps">7</span>
-                            <span class="widget-label">Total GPs</span>
-                        </div>
-                    </div>
-                    <div class="stat-widget">
-                        <div class="widget-icon">🏥</div>
-                        <div class="widget-info">
-                            <span class="widget-value" id="statScs">37</span>
-                            <span class="widget-label">Total Sub Centers</span>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Smart Table Section -->
-                <section class="table-section">
-                    <div class="table-toolbar">
-                        <div class="search-box">
-                            <i class="fas fa-search search-icon"></i>
-                            <input type="text" id="searchInput" placeholder="Search GP or Sub Center..." oninput="handleSearch()">
-                        </div>
-                    </div>
-
-                    <div class="table-container">
-                        <table class="smart-table">
-                            <thead>
-                                <tr>
-                                    <th class="text-center" style="width: 80px;">Sl No</th>
-                                    <th class="sortable" onclick="handleSort('gp')">
-                                        Gram Panchayat 
-                                        <span class="sort-icon-wrapper">
-                                            <i class="fas fa-sort" id="sortIconGp"></i>
-                                        </span>
-                                    </th>
-                                    <th class="sortable text-center" onclick="handleSort('count')" style="width: 180px;">
-                                        Sub Center Count
-                                        <span class="sort-icon-wrapper">
-                                            <i class="fas fa-sort" id="sortIconCount"></i>
-                                        </span>
-                                    </th>
-                                    <th>Sub Centers</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tableBody">
-                                <!-- Dynamic rows will be injected here -->
-                                <tr class="loading-row">
-                                    <td colspan="4">Loading data...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-            </div>
-
-            <!-- VIEW 2: EC Meeting Report -->
-            <div id="ecReportView" style="display: none;">
-                <header class="topbar flex justify-between items-center w-full">
-                    <div class="header-titles flex items-center gap-4"> <button onclick="toggleSidebar()" class="btn-premium-outline" style="padding: 6px 10px; margin-right: 8px;" title="Toggle Sidebar"><i class="fas fa-bars"></i></button> <div>
-                        <h1>EC Meeting Report</h1>
-                        <p>Facility wise breakdown of EC data elements</p>
-                    </div>
-                    <!-- Export Actions -->
-                    <div class="flex gap-2">
-                        <button onclick="fetchEcMeetingData()" class="btn-premium" title="Refresh Data">
-                            <i class="fas fa-sync-alt text-sm"></i> Refresh
-                        </button>
-                        <button onclick="exportEcToExcel()" class="btn-premium" title="Export to Excel">
-                            <i class="fas fa-file-excel text-sm"></i> Excel
-                        </button>
-                        <button onclick="exportEcToPDF()" class="btn-premium-outline" title="Export to PDF">
-                            <i class="fas fa-file-pdf text-sm"></i> PDF
-                        </button>
-                    </div>
-                </header>
-
-                <section class="table-section">
-                    <!-- Cascading Dropdowns & Compact KPI stats -->
-                    <div class="filter-toolbar">
-                        <div class="filter-group">
-                            <label for="filterYear">Year</label>
-                            <select id="filterYear" class="form-select" onchange="handleFilterChange('year')">
-                                <option value="">All Years</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="filterMonth">Month</label>
-                            <select id="filterMonth" class="form-select" onchange="handleFilterChange('month')">
-                                <option value="">All Months</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="filterDate">Date</label>
-                            <select id="filterDate" class="form-select" onchange="handleFilterChange('date')">
-                                <option value="">All Dates</option>
-                            </select>
-                        </div>
-
-                        <!-- Compact KPI Stat Cards -->
-                        <div class="filter-stats">
-                            <div class="filter-stat-card">
-                                <span class="filter-stat-value" id="repToReport">37</span>
-                                <span class="filter-stat-label">To Report</span>
-                            </div>
-                            <div class="filter-stat-card">
-                                <span class="filter-stat-value" id="repReported">0</span>
-                                <span class="filter-stat-label">Reported</span>
-                            </div>
-                            <div class="filter-stat-card clickable" onclick="openDefaultersModal()">
-                                <span class="filter-stat-value" id="repDefaulters" style="color: var(--color-maroon);">0</span>
-                                <span class="filter-stat-label" style="color: var(--color-maroon);">Defaulters <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Scrollable Report Table -->
-                    <div class="report-table-wrapper">
-                        <table class="report-grid-table">
-                            <thead>
-                                <tr>
-                                    <th style="min-width: 100px;">Date</th>
-                                    <th style="min-width: 180px;">Facility</th>
-                                    <th style="min-width: 90px;" class="text-center">EC Att.</th>
-                                    <th style="min-width: 90px;" class="text-center">Teen. EC</th>
-                                    <th style="min-width: 80px;" class="text-center">F. Steril</th>
-                                    <th style="min-width: 80px;" class="text-center">M. Steril</th>
-                                    <th style="min-width: 70px;" class="text-center">IUCD</th>
-                                    <th style="min-width: 80px;" class="text-center">Antara</th>
-                                    <th style="min-width: 70px;" class="text-center">CC</th>
-                                    <th style="min-width: 70px;" class="text-center">OP</th>
-                                    <th style="min-width: 70px;" class="text-center">ECP</th>
-                                    <th style="min-width: 85px;" class="text-center">Chhaya</th>
-                                    <th style="min-width: 120px;" class="text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="reportTableBody">
-                                <!-- Report rows will be injected dynamically -->
-                                <tr class="loading-row">
-                                    <td colspan="13">Loading meeting data...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-            </div>
-
-            <!-- VIEW 3: Delivery Coverage Report -->
-            <div id="deliveryView" style="display: none;">
-                <header class="topbar flex justify-between items-center w-full">
-                    <div class="header-titles flex items-center gap-4"> <button onclick="toggleSidebar()" class="btn-premium-outline" style="padding: 6px 10px; margin-right: 8px;" title="Toggle Sidebar"><i class="fas fa-bars"></i></button> <div>
-                        <h1>Delivery Coverage</h1>
-                        <p id="deliverySubtitle">Facility wise breakdown of delivery data elements</p>
-                    </div>
-                    <!-- Export Actions -->
-                    <div class="flex gap-2" id="deliveryExportBtns">
-                        <button onclick="fetchDeliveryData()" class="btn-premium" title="Refresh Data">
-                            <i class="fas fa-sync-alt text-sm"></i> Refresh
-                        </button>
-                        <button onclick="exportDelToExcel()" class="btn-premium" title="Export to Excel">
-                            <i class="fas fa-file-excel text-sm"></i> Excel
-                        </button>
-                        <button onclick="exportDelToPDF()" class="btn-premium-outline" title="Export to PDF">
-                            <i class="fas fa-file-pdf text-sm"></i> PDF
-                        </button>
-                    </div>
-                </header>
-
-                <!-- Sub-view Tab Switcher -->
-                <div class="del-view-tabs">
-                    <button class="del-view-tab active" id="tabFacilityView" onclick="switchDelSubView('facility')">
-                        <i class="fas fa-hospital"></i> Facility View
-                    </button>
-                    <button class="del-view-tab" id="tabMonthlyView" onclick="switchDelSubView('monthly')">
-                        <i class="fas fa-calendar-alt"></i> Monthly Breakdown (FY)
-                    </button>
                 </div>
 
-                <!-- SUB-VIEW A: Existing Facility-wise view -->
-                <section class="table-section" id="delFacilitySection">
-                    <!-- Cascading Dropdowns & Compact KPI stats -->
-                    <div class="filter-toolbar">
-                        <div class="filter-group">
-                            <label for="filterDelYear">Year</label>
-                            <select id="filterDelYear" class="form-select" onchange="handleDelFilterChange('year')">
-                                <option value="">All Years</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="filterDelMonth">Month</label>
-                            <select id="filterDelMonth" class="form-select" onchange="handleDelFilterChange('month')">
-                                <option value="">All Months</option>
-                            </select>
-                        </div>
+                <div class="report-table-wrapper">
+                    <table class="report-grid-table">
+                        <thead>
+                            <tr>
+                                <th style="min-width:100px">Date</th>
+                                <th style="min-width:180px">Facility</th>
+                                <th class="text-center" style="min-width:85px">EC Att.</th>
+                                <th class="text-center" style="min-width:85px">Teen EC</th>
+                                <th class="text-center" style="min-width:80px">F.Steril</th>
+                                <th class="text-center" style="min-width:80px">M.Steril</th>
+                                <th class="text-center" style="min-width:70px">IUCD</th>
+                                <th class="text-center" style="min-width:70px">Antara</th>
+                                <th class="text-center" style="min-width:70px">CC</th>
+                                <th class="text-center" style="min-width:70px">OP</th>
+                                <th class="text-center" style="min-width:70px">ECP</th>
+                                <th class="text-center" style="min-width:80px">Chhaya</th>
+                                <th class="text-center" style="min-width:110px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody">
+                            <tr class="loading-row"><td colspan="13"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
 
-                        <!-- Compact KPI Stat Cards -->
-                        <div class="filter-stats">
-                            <div class="filter-stat-card">
-                                <span class="filter-stat-value" id="delToReport">37</span>
-                                <span class="filter-stat-label">To Report</span>
-                            </div>
-                            <div class="filter-stat-card">
-                                <span class="filter-stat-value" id="delReported">0</span>
-                                <span class="filter-stat-label">Reported</span>
-                            </div>
-                            <div class="filter-stat-card clickable" onclick="openDelDefaultersModal()">
-                                <span class="filter-stat-value" id="delDefaulters" style="color: var(--color-maroon);">0</span>
-                                <span class="filter-stat-label" style="color: var(--color-maroon);">Defaulters <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></span>
-                            </div>
-                        </div>
+        <!-- ===================== VIEW 3: DELIVERY COVERAGE ===================== -->
+        <div id="deliveryView" style="display:none">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="btn-menu-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+                    <div>
+                        <div class="topbar-page-title">Delivery Coverage</div>
+                        <div class="topbar-breadcrumb"><span>Home</span><span class="crumb-sep">›</span><span class="crumb-current">Delivery Coverage</span></div>
                     </div>
+                </div>
+                <div class="topbar-actions" id="deliveryExportBtns">
+                    <button class="btn btn-primary" onclick="fetchDeliveryData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    <button class="btn btn-outline" onclick="exportDelToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button class="btn btn-ghost" onclick="exportDelToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
+            </header>
 
-                    <!-- Scrollable Report Table -->
-                    <div class="report-table-wrapper">
-                        <table class="report-grid-table">
-                            <thead>
-                                <tr>
-                                    <th rowspan="2" style="vertical-align: middle; min-width: 120px;" class="text-center">GP</th>
-                                    <th rowspan="2" style="vertical-align: middle; min-width: 180px;" class="text-center">Facility</th>
-                                    <th colspan="3" class="text-center font-bold border-b border-maroon/20">Place of delivery</th>
-                                    <th colspan="3" class="text-center font-bold border-b border-maroon/20">Method of Delivery</th>
-                                    <th colspan="3" class="text-center font-bold border-b border-maroon/20">Pregnancy Outcome</th>
-                                    <th rowspan="2" style="vertical-align: middle; min-width: 120px;" class="text-center">Actions</th>
-                                </tr>
-                                <tr>
-                                    <th style="min-width: 80px;" class="text-center">Home</th>
-                                    <th style="min-width: 80px;" class="text-center">Govt</th>
-                                    <th style="min-width: 80px;" class="text-center">Pvt</th>
-                                    <th style="min-width: 80px;" class="text-center">Normal</th>
-                                    <th style="min-width: 80px;" class="text-center">CS</th>
-                                    <th style="min-width: 80px;" class="text-center">Total</th>
-                                    <th style="min-width: 85px;" class="text-center">Live Birth</th>
-                                    <th style="min-width: 85px;" class="text-center">Still Birth</th>
-                                    <th style="min-width: 85px;" class="text-center">Abortion</th>
-                                </tr>
-                            </thead>
-                            <tbody id="deliveryTableBody">
-                                <!-- Report rows will be injected dynamically -->
-                                <tr class="loading-row">
-                                    <td colspan="12">Loading delivery data...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
-                <!-- SUB-VIEW B: Monthly Breakdown (Financial Year) -->
-                <section class="table-section" id="delMonthlySection" style="display: none;">
-                    <!-- FY Year & Facility Dropdowns -->
-                    <div class="filter-toolbar">
-                        <div class="filter-group">
-                            <label for="filterDelFY">Financial Year</label>
-                            <select id="filterDelFY" class="form-select" onchange="handleDelMonthlyFilterChange()">
-                                <option value="">Select FY</option>
-                            </select>
-                        </div>
-                        <div class="filter-group" style="min-width: 280px; position: relative;">
-                            <label>Facility</label>
-                            <div class="multiselect-dropdown" id="facilityMultiselect">
-                                <div class="multiselect-trigger" onclick="toggleFacilityDropdown()">
-                                    <span class="multiselect-label" id="facilityMultiselectLabel">All Facilities</span>
-                                    <span class="multiselect-badge" id="facilityMultiselectBadge" style="display: none;">0</span>
-                                    <i class="fas fa-chevron-down multiselect-arrow"></i>
-                                </div>
-                                <div class="multiselect-menu" id="facilityMultiselectMenu">
-                                    <div class="multiselect-search-wrap">
-                                        <input type="text" class="multiselect-search" id="facilitySearchInput" placeholder="Search facilities..." oninput="filterFacilityOptions()">
-                                    </div>
-                                    <div class="multiselect-option multiselect-option-all" onclick="toggleAllFacilities()">
-                                        <input type="checkbox" id="facilitySelectAll" checked>
-                                        <label for="facilitySelectAll"><strong>Select All</strong></label>
-                                    </div>
-                                    <div class="multiselect-options-list" id="facilityOptionsList">
-                                        <!-- Facility checkboxes injected by JS -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Export for monthly view -->
-                        <div style="margin-left: auto; display: flex; gap: 8px; align-items: flex-end;">
-                            <button onclick="fetchDeliveryData()" class="btn-premium" title="Refresh Data">
-                                <i class="fas fa-sync-alt text-sm"></i> Refresh
-                            </button>
-                            <button onclick="exportDelMonthlyToExcel()" class="btn-premium" title="Export to Excel">
-                                <i class="fas fa-file-excel text-sm"></i> Excel
-                            </button>
-                            <button onclick="exportDelMonthlyToPDF()" class="btn-premium-outline" title="Export to PDF">
-                                <i class="fas fa-file-pdf text-sm"></i> PDF
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Monthly Breakdown Table -->
-                    <div class="report-table-wrapper">
-                        <table class="report-grid-table" id="delMonthlyTable">
-                            <thead>
-                                <tr>
-                                    <th rowspan="2" style="vertical-align: middle; min-width: 120px;" class="text-center">Month</th>
-                                    <th colspan="3" class="text-center font-bold border-b border-maroon/20">Place of Delivery</th>
-                                    <th colspan="3" class="text-center font-bold border-b border-maroon/20">Method of Delivery</th>
-                                    <th colspan="3" class="text-center font-bold border-b border-maroon/20">Pregnancy Outcome</th>
-                                </tr>
-                                <tr>
-                                    <th style="min-width: 80px;" class="text-center">Home</th>
-                                    <th style="min-width: 80px;" class="text-center">Govt</th>
-                                    <th style="min-width: 80px;" class="text-center">Pvt</th>
-                                    <th style="min-width: 80px;" class="text-center">Normal</th>
-                                    <th style="min-width: 80px;" class="text-center">CS</th>
-                                    <th style="min-width: 80px;" class="text-center">Total</th>
-                                    <th style="min-width: 85px;" class="text-center">Live Birth</th>
-                                    <th style="min-width: 85px;" class="text-center">Still Birth</th>
-                                    <th style="min-width: 85px;" class="text-center">Abortion</th>
-                                </tr>
-                            </thead>
-                            <tbody id="delMonthlyTableBody">
-                                <tr class="no-data-row">
-                                    <td colspan="10" class="text-center">Select a Financial Year to view monthly breakdown.</td>
-                                </tr>
-                            </tbody>
-                            <tfoot id="delTableFoot"></tfoot>
-                        </table>
-                    </div>
-                </section>
+            <!-- Sub-view tabs -->
+            <div class="del-view-tabs">
+                <button class="del-view-tab active" id="tabFacilityView" onclick="switchDelSubView('facility')"><i class="fas fa-hospital"></i> Facility View</button>
+                <button class="del-view-tab" id="tabMonthlyView" onclick="switchDelSubView('monthly')"><i class="fas fa-calendar-alt"></i> Monthly Breakdown (FY)</button>
             </div>
 
-            <!-- VIEW 4: WPD Report - Revamped -->
-            <div id="wpdReportView" style="display: none;">
-                <header class="topbar flex justify-between items-center w-full">
-                    <div class="header-titles flex items-center gap-4">
-                        <button onclick="toggleSidebar()" class="btn-premium-outline" style="padding: 6px 10px; margin-right: 8px;" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
-                        <div>
-                            <h1>WPD Report</h1>
-                            <p>Facility wise breakdown from WPF service delivery subcenter data</p>
+            <!-- SUB-VIEW A: Facility wise -->
+            <section class="table-section" id="delFacilitySection">
+                <div class="filter-toolbar">
+                    <div class="filter-group">
+                        <label for="filterDelYear">Year</label>
+                        <select id="filterDelYear" class="form-select" onchange="handleDelFilterChange('year')"><option value="">All Years</option></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterDelMonth">Month</label>
+                        <select id="filterDelMonth" class="form-select" onchange="handleDelFilterChange('month')"><option value="">All Months</option></select>
+                    </div>
+                    <div class="filter-stats">
+                        <div class="filter-stat-card">
+                            <span class="filter-stat-value" id="delToReport">37</span>
+                            <span class="filter-stat-label">To Report</span>
+                        </div>
+                        <div class="filter-stat-card">
+                            <span class="filter-stat-value" id="delReported">0</span>
+                            <span class="filter-stat-label">Reported</span>
+                        </div>
+                        <div class="filter-stat-card clickable danger" onclick="openDelDefaultersModal()">
+                            <span class="filter-stat-value" id="delDefaulters">0</span>
+                            <span class="filter-stat-label">Defaulters <i class="fas fa-external-link-alt" style="font-size:0.65rem"></i></span>
                         </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="fetchWpdData()" class="btn-premium" title="Refresh Data">
-                            <i class="fas fa-sync-alt text-sm"></i> Refresh
-                        </button>
-                        <button onclick="openWpdDefaultersModal()" class="px-4 py-2 text-xs font-semibold text-white bg-maroon border border-maroon hover:bg-maroon/90 rounded-md shadow-sm transition duration-150 flex items-center gap-1.5" title="View Defaulter Subcenters">
-                            <i class="fas fa-exclamation-circle text-sm"></i> Defaulters
-                        </button>
-                        <button onclick="exportWpdToExcel()" class="btn-premium" title="Export to Excel">
-                            <i class="fas fa-file-excel text-sm"></i> Excel
-                        </button>
-                        <button onclick="exportWpdToPDF()" class="btn-premium-outline" title="Export to PDF">
-                            <i class="fas fa-file-pdf text-sm"></i> PDF
-                        </button>
-                    </div>
-                </header>
+                </div>
+                <div class="report-table-wrapper">
+                    <table class="report-grid-table">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="vertical-align:middle;min-width:110px" class="text-center">GP</th>
+                                <th rowspan="2" style="vertical-align:middle;min-width:170px" class="text-center">Facility</th>
+                                <th colspan="3" class="text-center">Place of Delivery</th>
+                                <th colspan="3" class="text-center">Method of Delivery</th>
+                                <th colspan="3" class="text-center">Pregnancy Outcome</th>
+                                <th rowspan="2" style="vertical-align:middle;min-width:110px" class="text-center">Actions</th>
+                            </tr>
+                            <tr>
+                                <th class="text-center" style="min-width:70px">Home</th>
+                                <th class="text-center" style="min-width:70px">Govt</th>
+                                <th class="text-center" style="min-width:70px">Pvt</th>
+                                <th class="text-center" style="min-width:70px">Normal</th>
+                                <th class="text-center" style="min-width:70px">CS</th>
+                                <th class="text-center" style="min-width:70px">Total</th>
+                                <th class="text-center" style="min-width:80px">Live Birth</th>
+                                <th class="text-center" style="min-width:80px">Still Birth</th>
+                                <th class="text-center" style="min-width:80px">Abortion</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deliveryTableBody">
+                            <tr class="loading-row"><td colspan="12"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
-                <section class="table-section">
-                    <!-- Compact KPI Stats -->
-                    <div class="wpd-kpi-cards">
-                        <div class="kpi-card kpi-primary">
-                            <div class="kpi-icon"><i class="fas fa-database"></i></div>
-                            <div class="kpi-content">
-                                <span class="kpi-value" id="wpdTotalRows">0</span>
-                                <span class="kpi-label">Total Records</span>
-                            </div>
-                        </div>
-                        <div class="kpi-card kpi-secondary">
-                            <div class="kpi-icon"><i class="fas fa-calendar-check"></i></div>
-                            <div class="kpi-content">
-                                <span class="kpi-value" id="wpdReported">0</span>
-                                <span class="kpi-label">Reported</span>
-                            </div>
-                        </div>
-                        <div class="kpi-card kpi-alert" onclick="openWpdDefaultersModal()" style="cursor: pointer;">
-                            <div class="kpi-icon"><i class="fas fa-exclamation-triangle"></i></div>
-                            <div class="kpi-content">
-                                <span class="kpi-value" id="wpdDefaultersCount">0</span>
-                                <span class="kpi-label">Defaulters</span>
-                            </div>
-                        </div>
+            <!-- SUB-VIEW B: Monthly Breakdown -->
+            <section class="table-section" id="delMonthlySection" style="display:none">
+                <div class="filter-toolbar">
+                    <div class="filter-group">
+                        <label for="filterDelFY">Financial Year</label>
+                        <select id="filterDelFY" class="form-select" onchange="handleDelMonthlyFilterChange()"><option value="">Select FY</option></select>
                     </div>
-
-                    <!-- Collapsible Filter Card -->
-                    <div class="wpd-filter-card expanded" id="wpdFilterCard">
-                        <div class="filter-card-header" onclick="toggleWpdFilterSection()">
-                            <div class="filter-card-title">
-                                <i class="fas fa-filter filter-card-icon"></i>
-                                <span>Filters & Options</span>
+                    <div class="filter-group" style="min-width:260px;position:relative">
+                        <label>Facility</label>
+                        <div class="multiselect-dropdown" id="facilityMultiselect">
+                            <div class="multiselect-trigger" onclick="toggleFacilityDropdown()">
+                                <span class="multiselect-label" id="facilityMultiselectLabel">All Facilities</span>
+                                <span class="multiselect-badge" id="facilityMultiselectBadge" style="display:none">0</span>
+                                <i class="fas fa-chevron-down multiselect-arrow"></i>
                             </div>
-                            <i class="fas fa-chevron-down filter-card-toggle"></i>
-                        </div>
-                        <div class="filter-card-content" id="wpdFilterContent">
-                            <div class="filter-grid">
-                                <div class="filter-group">
-                                    <label for="filterWpdYear">Year</label>
-                                    <select id="filterWpdYear" class="form-select" onchange="handleWpdFilterChange()">
-                                        <option value="">All Years</option>
-                                    </select>
-                                </div>
-                                <div class="filter-group">
-                                    <label for="filterWpdMonth">Month</label>
-                                    <select id="filterWpdMonth" class="form-select" onchange="handleWpdFilterChange()">
-                                        <option value="">All Months</option>
-                                    </select>
-                                </div>
-                                <div class="filter-group">
-                                    <label>Date</label>
-                                    <div class="multiselect-dropdown" id="wpdDateMultiselect">
-                                        <div class="multiselect-trigger" onclick="toggleWpdDateDropdown()">
-                                            <span class="multiselect-label" id="wpdDateMultiselectLabel">All Dates</span>
-                                            <span class="multiselect-badge" id="wpdDateMultiselectBadge" style="display: none;">0</span>
-                                            <i class="fas fa-chevron-down multiselect-arrow"></i>
-                                        </div>
-                                        <div class="multiselect-menu" id="wpdDateMultiselectMenu">
-                                            <div class="multiselect-search-wrap">
-                                                <input type="text" class="multiselect-search" id="wpdDateSearchInput" placeholder="Search dates..." oninput="filterWpdDateOptions()">
-                                            </div>
-                                            <div class="multiselect-option multiselect-option-all" onclick="toggleAllWpdDates()">
-                                                <input type="checkbox" id="wpdDateSelectAll" checked>
-                                                <label for="wpdDateSelectAll"><strong>Select All</strong></label>
-                                            </div>
-                                            <div class="multiselect-options-list" id="wpdDateOptionsList">
-                                                <!-- Checkboxes injected by JS -->
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="filter-group">
-                                    <label>Facility</label>
-                                    <div class="multiselect-dropdown" id="wpdFacilityMultiselect">
-                                        <div class="multiselect-trigger" onclick="toggleWpdFacilityDropdown()">
-                                            <span class="multiselect-label" id="wpdFacilityMultiselectLabel">All Facilities</span>
-                                            <span class="multiselect-badge" id="wpdFacilityMultiselectBadge" style="display: none;">0</span>
-                                            <i class="fas fa-chevron-down multiselect-arrow"></i>
-                                        </div>
-                                        <div class="multiselect-menu" id="wpdFacilityMultiselectMenu">
-                                            <div class="multiselect-search-wrap">
-                                                <input type="text" class="multiselect-search" id="wpdFacilitySearchInput" placeholder="Search facilities..." oninput="filterWpdFacilityOptions()">
-                                            </div>
-                                            <div class="multiselect-option multiselect-option-all" onclick="toggleAllWpdFacilities()">
-                                                <input type="checkbox" id="wpdFacilitySelectAll" checked>
-                                                <label for="wpdFacilitySelectAll"><strong>Select All</strong></label>
-                                            </div>
-                                            <div class="multiselect-options-list" id="wpdFacilityOptionsList">
-                                                <!-- Checkboxes injected by JS -->
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="multiselect-menu" id="facilityMultiselectMenu">
+                                <div class="multiselect-search-wrap"><input type="text" class="multiselect-search" id="facilitySearchInput" placeholder="Search facilities..." oninput="filterFacilityOptions()"></div>
+                                <div class="multiselect-option multiselect-option-all" onclick="toggleAllFacilities()"><input type="checkbox" id="facilitySelectAll" checked><label for="facilitySelectAll"><strong>Select All</strong></label></div>
+                                <div class="multiselect-options-list" id="facilityOptionsList"></div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Data Table -->
-                    <div class="wpd-data-card">
-                        <div class="report-table-wrapper" id="wpdTableWrapper">
-                            <table class="report-grid-table" id="wpdTable">
-                                <thead id="wpdTableHead"></thead>
-                                <tbody id="wpdTableBody">
-                                    <tr class="loading-row">
-                                        <td colspan="8"><i class="fas fa-spinner fa-spin"></i> Loading WPD data...</td>
-                                    </tr>
-                                </tbody>
-                                <tfoot id="wpdTableFoot"></tfoot>
-                            </table>
-                        </div>
+                    <div style="margin-left:auto;display:flex;gap:8px;align-items:flex-end">
+                        <button class="btn btn-outline btn-sm" onclick="exportDelMonthlyToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+                        <button class="btn btn-ghost btn-sm" onclick="exportDelMonthlyToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
                     </div>
-                </section>
-            </div>
+                </div>
+                <div class="report-table-wrapper">
+                    <table class="report-grid-table" id="delMonthlyTable">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="vertical-align:middle;min-width:110px" class="text-center">Month</th>
+                                <th colspan="3" class="text-center">Place of Delivery</th>
+                                <th colspan="3" class="text-center">Method of Delivery</th>
+                                <th colspan="3" class="text-center">Pregnancy Outcome</th>
+                            </tr>
+                            <tr>
+                                <th class="text-center" style="min-width:70px">Home</th>
+                                <th class="text-center" style="min-width:70px">Govt</th>
+                                <th class="text-center" style="min-width:70px">Pvt</th>
+                                <th class="text-center" style="min-width:70px">Normal</th>
+                                <th class="text-center" style="min-width:70px">CS</th>
+                                <th class="text-center" style="min-width:70px">Total</th>
+                                <th class="text-center" style="min-width:80px">Live Birth</th>
+                                <th class="text-center" style="min-width:80px">Still Birth</th>
+                                <th class="text-center" style="min-width:80px">Abortion</th>
+                            </tr>
+                        </thead>
+                        <tbody id="delMonthlyTableBody">
+                            <tr class="no-data-row"><td colspan="10" class="text-center">Select a Financial Year to view monthly breakdown.</td></tr>
+                        </tbody>
+                        <tfoot id="delTableFoot"></tfoot>
+                    </table>
+                </div>
+            </section>
+        </div>
 
-            <!-- VIEW 5: IDCF Report -->
-            <div id="idcfView" style="display: none;">
-                <header class="topbar flex justify-between items-center w-full">
-                    <div class="header-titles flex items-center gap-4"> <button onclick="toggleSidebar()" class="btn-premium-outline" style="padding: 6px 10px; margin-right: 8px;" title="Toggle Sidebar"><i class="fas fa-bars"></i></button> <div>
-                        <h1>IDCF Report</h1>
-                        <p>Facility wise breakdown of IDCF data elements</p>
+        <!-- ===================== VIEW 4: WPF REPORT ===================== -->
+        <div id="wpdReportView" style="display:none">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="btn-menu-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+                    <div>
+                        <div class="topbar-page-title">WPF Service Delivery Report</div>
+                        <div class="topbar-breadcrumb"><span>Home</span><span class="crumb-sep">›</span><span class="crumb-current">WPF Report</span></div>
                     </div>
-                    <!-- Export Actions -->
-                    <div class="flex gap-2">
-                        <button onclick="fetchIdcfData()" class="btn-premium" title="Refresh Data">
-                            <i class="fas fa-sync-alt text-sm"></i> Refresh
-                        </button>
-                        <button onclick="exportIdcfToExcel()" class="btn-premium" title="Export to Excel">
-                            <i class="fas fa-file-excel text-sm"></i> Excel
-                        </button>
-                        <button onclick="exportIdcfToPDF()" class="btn-premium-outline" title="Export to PDF">
-                            <i class="fas fa-file-pdf text-sm"></i> PDF
-                        </button>
+                </div>
+                <div class="topbar-actions">
+                    <button class="btn btn-primary" onclick="fetchWpdData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    <button class="btn btn-outline" onclick="openWpdDefaultersModal()"><i class="fas fa-exclamation-circle"></i> Defaulters</button>
+                    <button class="btn btn-outline" onclick="exportWpdToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button class="btn btn-ghost" onclick="exportWpdToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
+            </header>
+
+            <section class="table-section">
+                <div class="filter-toolbar">
+                    <div class="filter-group">
+                        <label for="filterWpdYear">Year</label>
+                        <select id="filterWpdYear" class="form-select" onchange="handleWpdFilterChange()"><option value="">All Years</option></select>
                     </div>
-                </header>
-
-                <section class="table-section">
-                    <!-- Filter Toolbar & KPI stats -->
-                    <div class="filter-toolbar">
-                        <div class="filter-group">
-                            <label for="filterIdcfYear">Year</label>
-                            <select id="filterIdcfYear" class="form-select" onchange="handleIdcfFilterChange()">
-                                <option value="">All Years</option>
-                            </select>
-                        </div>
-
-                        <!-- Compact KPI Stat Cards -->
-                        <div class="filter-stats">
-                            <div class="filter-stat-card">
-                                <span class="filter-stat-value" id="idcfToReport">37</span>
-                                <span class="filter-stat-label">To Report</span>
+                    <div class="filter-group">
+                        <label for="filterWpdMonth">Month</label>
+                        <select id="filterWpdMonth" class="form-select" onchange="handleWpdFilterChange()"><option value="">All Months</option></select>
+                    </div>
+                    <div class="filter-group" style="position:relative;min-width:180px">
+                        <label>Date</label>
+                        <div class="multiselect-dropdown" id="wpdDateMultiselect">
+                            <div class="multiselect-trigger" onclick="toggleWpdDateDropdown()">
+                                <span class="multiselect-label" id="wpdDateMultiselectLabel">All Dates</span>
+                                <span class="multiselect-badge" id="wpdDateMultiselectBadge" style="display:none">0</span>
+                                <i class="fas fa-chevron-down multiselect-arrow"></i>
                             </div>
-                            <div class="filter-stat-card">
-                                <span class="filter-stat-value" id="idcfReported">0</span>
-                                <span class="filter-stat-label">Reported</span>
-                            </div>
-                            <div class="filter-stat-card clickable" onclick="openIdcfDefaultersModal()">
-                                <span class="filter-stat-value" id="idcfDefaulters" style="color: var(--color-maroon);">0</span>
-                                <span class="filter-stat-label" style="color: var(--color-maroon);">Defaulters <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Scrollable Report Table -->
-                    <div class="report-table-wrapper">
-                        <table class="report-grid-table">
-                            <thead>
-                                <tr>
-                                    <th style="min-width: 180px;">Facility</th>
-                                    <th style="min-width: 90px;" class="text-center">Villages Served</th>
-                                    <th style="min-width: 100px;" class="text-center">Villages ORS Dist.</th>
-                                    <th style="min-width: 95px;" class="text-center">Children (0-5)</th>
-                                    <th style="min-width: 95px;" class="text-center">Children ORS</th>
-                                    <th style="min-width: 80px;" class="text-center">Diarrhea</th>
-                                    <th style="min-width: 95px;" class="text-center">Diarrhea ORS</th>
-                                    <th style="min-width: 100px;" class="text-center">Diarrhea Zinc</th>
-                                    <th style="min-width: 90px;" class="text-center">Danger Ref.</th>
-                                    <th style="min-width: 85px;" class="text-center">ORS Corner</th>
-                                    <th style="min-width: 90px;" class="text-center">Schools HW</th>
-                                    <th style="min-width: 120px;" class="text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="idcfTableBody">
-                                <tr class="loading-row">
-                                    <td colspan="12">Loading IDCF data...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-            </div>
-
-            <!-- VIEW 5: Vitamin A Report -->
-            <div id="vitaminAView" style="display: none;">
-                <header class="topbar flex justify-between items-center w-full">
-                    <div class="header-titles flex items-center gap-4"> <button onclick="toggleSidebar()" class="btn-premium-outline" style="padding: 6px 10px; margin-right: 8px;" title="Toggle Sidebar"><i class="fas fa-bars"></i></button> <div>
-                        <h1>Vitamin A Report</h1>
-                        <p>Facility wise breakdown of Vitamin A data</p>
-                    </div>
-                    <!-- Export Actions -->
-                    <div class="flex gap-2">
-                        <button onclick="fetchVitaminAData()" class="btn-premium" title="Refresh Data">
-                            <i class="fas fa-sync-alt text-sm"></i> Refresh
-                        </button>
-                        <button onclick="exportVitaminAToExcel()" class="btn-premium" title="Export to Excel">
-                            <i class="fas fa-file-excel text-sm"></i> Excel
-                        </button>
-                        <button onclick="exportVitaminAToPDF()" class="btn-premium-outline" title="Export to PDF">
-                            <i class="fas fa-file-pdf text-sm"></i> PDF
-                        </button>
-                    </div>
-                </header>
-
-                <section class="table-section">
-                    <div class="filter-toolbar">
-                        <div class="filter-group">
-                            <label for="filterVitaminAYear">Year</label>
-                            <select id="filterVitaminAYear" class="form-select" onchange="handleVitaminAFilterChange('year')">
-                                <option value="">All Years</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="filterVitaminARound">Round</label>
-                            <select id="filterVitaminARound" class="form-select" onchange="handleVitaminAFilterChange('round')">
-                                <option value="">All Rounds</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-stats">
-                            <div class="filter-stat-card">
-                                <span class="filter-stat-value" id="vitaminAToReport">37</span>
-                                <span class="filter-stat-label">To Report</span>
-                            </div>
-                            <div class="filter-stat-card">
-                                <span class="filter-stat-value" id="vitaminAReported">0</span>
-                                <span class="filter-stat-label">Reported</span>
-                            </div>
-                            <div class="filter-stat-card clickable" onclick="openVitaminADefaultersModal()">
-                                <span class="filter-stat-value" id="vitaminADefaulters" style="color: var(--color-maroon);">0</span>
-                                <span class="filter-stat-label" style="color: var(--color-maroon);">Defaulters <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i></span>
+                            <div class="multiselect-menu" id="wpdDateMultiselectMenu">
+                                <div class="multiselect-search-wrap"><input type="text" class="multiselect-search" id="wpdDateSearchInput" placeholder="Search dates..." oninput="filterWpdDateOptions()"></div>
+                                <div class="multiselect-option multiselect-option-all" onclick="toggleAllWpdDates()"><input type="checkbox" id="wpdDateSelectAll" checked><label for="wpdDateSelectAll"><strong>Select All</strong></label></div>
+                                <div class="multiselect-options-list" id="wpdDateOptionsList"></div>
                             </div>
                         </div>
                     </div>
-
-                    <div class="report-table-wrapper">
-                        <table class="report-grid-table">
-                            <thead>
-                                <tr>
-                                    <th rowspan="2" style="min-width: 180px; vertical-align: middle;">Facility</th>
-                                    <th colspan="2" class="text-center font-bold border-b border-maroon/20">9-12 Months</th>
-                                    <th colspan="2" class="text-center font-bold border-b border-maroon/20">12-24 Months</th>
-                                    <th colspan="2" class="text-center font-bold border-b border-maroon/20">24-36 Months</th>
-                                    <th colspan="2" class="text-center font-bold border-b border-maroon/20">36-60 Months</th>
-                                    <th colspan="2" class="text-center font-bold border-b border-maroon/20">Total</th>
-                                    <th rowspan="2" style="min-width: 120px; vertical-align: middle;" class="text-center">Actions</th>
-                                </tr>
-                                <tr>
-                                    <th style="min-width: 60px;" class="text-center">Due</th>
-                                    <th style="min-width: 60px;" class="text-center">Rec.</th>
-                                    <th style="min-width: 60px;" class="text-center">Due</th>
-                                    <th style="min-width: 60px;" class="text-center">Rec.</th>
-                                    <th style="min-width: 60px;" class="text-center">Due</th>
-                                    <th style="min-width: 60px;" class="text-center">Rec.</th>
-                                    <th style="min-width: 60px;" class="text-center">Due</th>
-                                    <th style="min-width: 60px;" class="text-center">Rec.</th>
-                                    <th style="min-width: 60px;" class="text-center">Due</th>
-                                    <th style="min-width: 60px;" class="text-center">Rec.</th>
-                                </tr>
-                            </thead>
-                            <tbody id="vitaminATableBody">
-                                <tr class="loading-row">
-                                    <td colspan="12">Loading Vitamin A data...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="filter-group" style="position:relative;min-width:240px">
+                        <label>Facility</label>
+                        <div class="multiselect-dropdown" id="wpdFacilityMultiselect">
+                            <div class="multiselect-trigger" onclick="toggleWpdFacilityDropdown()">
+                                <span class="multiselect-label" id="wpdFacilityMultiselectLabel">All Facilities</span>
+                                <span class="multiselect-badge" id="wpdFacilityMultiselectBadge" style="display:none">0</span>
+                                <i class="fas fa-chevron-down multiselect-arrow"></i>
+                            </div>
+                            <div class="multiselect-menu" id="wpdFacilityMultiselectMenu">
+                                <div class="multiselect-search-wrap"><input type="text" class="multiselect-search" id="wpdFacilitySearchInput" placeholder="Search facilities..." oninput="filterWpdFacilityOptions()"></div>
+                                <div class="multiselect-option multiselect-option-all" onclick="toggleAllWpdFacilities()"><input type="checkbox" id="wpdFacilitySelectAll" checked><label for="wpdFacilitySelectAll"><strong>Select All</strong></label></div>
+                                <div class="multiselect-options-list" id="wpdFacilityOptionsList"></div>
+                            </div>
+                        </div>
                     </div>
-                </section>
-            </div>
-        </main>
-    </div>
+                    <div class="filter-stats">
+                        <div class="filter-stat-card">
+                            <span class="filter-stat-value" id="wpdTotalRows">0</span>
+                            <span class="filter-stat-label">Records</span>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Edit Modal -->
-    <div id="editModal" class="modal-overlay">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto p-7 transform transition-all">
-            <!-- Modal Header -->
-            <div class="flex justify-between items-center border-b border-gray-200 pb-3 mb-5">
-                <h2 class="text-xl font-bold text-maroon flex items-center gap-2">
-                    <i class="fas fa-edit text-maroon"></i> Edit Record
-                </h2>
-                <button class="text-gray-400 hover:text-maroon text-2xl" onclick="closeEditModal()">&times;</button>
-            </div>
-            
+                <div id="wpdTableWrapper">
+                    <!-- Dynamic tables will be injected here -->
+                </div>
+            </section>
+        </div>
+
+        <!-- ===================== VIEW 5: VITAMIN A ===================== -->
+        <div id="vitaminAView" style="display:none">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="btn-menu-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+                    <div>
+                        <div class="topbar-page-title">Vitamin A Report</div>
+                        <div class="topbar-breadcrumb"><span>Home</span><span class="crumb-sep">›</span><span class="crumb-current">Vitamin A</span></div>
+                    </div>
+                </div>
+                <div class="topbar-actions">
+                    <button class="btn btn-primary" onclick="fetchVitaminAData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    <button class="btn btn-outline" onclick="exportVitaminAToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button class="btn btn-ghost" onclick="exportVitaminAToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
+            </header>
+
+            <section class="table-section">
+                <div class="filter-toolbar">
+                    <div class="filter-group">
+                        <label for="filterVitaminAYear">Year</label>
+                        <select id="filterVitaminAYear" class="form-select" onchange="handleVitaminAFilterChange('year')"><option value="">All Years</option></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterVitaminARound">Round</label>
+                        <select id="filterVitaminARound" class="form-select" onchange="handleVitaminAFilterChange('round')"><option value="">All Rounds</option></select>
+                    </div>
+                    <div class="filter-stats">
+                        <div class="filter-stat-card">
+                            <span class="filter-stat-value" id="vitaminAToReport">37</span>
+                            <span class="filter-stat-label">To Report</span>
+                        </div>
+                        <div class="filter-stat-card">
+                            <span class="filter-stat-value" id="vitaminAReported">0</span>
+                            <span class="filter-stat-label">Reported</span>
+                        </div>
+                        <div class="filter-stat-card clickable danger" onclick="openVitaminADefaultersModal()">
+                            <span class="filter-stat-value" id="vitaminADefaulters">0</span>
+                            <span class="filter-stat-label">Defaulters <i class="fas fa-external-link-alt" style="font-size:0.65rem"></i></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-table-wrapper">
+                    <table class="report-grid-table">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="min-width:170px;vertical-align:middle">Facility</th>
+                                <th colspan="2" class="text-center">9-12 Months</th>
+                                <th colspan="2" class="text-center">12-24 Months</th>
+                                <th colspan="2" class="text-center">24-36 Months</th>
+                                <th colspan="2" class="text-center">36-60 Months</th>
+                                <th colspan="2" class="text-center">Total</th>
+                                <th rowspan="2" style="min-width:110px;vertical-align:middle" class="text-center">Actions</th>
+                            </tr>
+                            <tr>
+                                <th class="text-center" style="min-width:55px">Due</th><th class="text-center" style="min-width:55px">Rec.</th>
+                                <th class="text-center" style="min-width:55px">Due</th><th class="text-center" style="min-width:55px">Rec.</th>
+                                <th class="text-center" style="min-width:55px">Due</th><th class="text-center" style="min-width:55px">Rec.</th>
+                                <th class="text-center" style="min-width:55px">Due</th><th class="text-center" style="min-width:55px">Rec.</th>
+                                <th class="text-center" style="min-width:55px">Due</th><th class="text-center" style="min-width:55px">Rec.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vitaminATableBody">
+                            <tr class="loading-row"><td colspan="12"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+    </main>
+</div>
+
+<!-- ======================== MODALS ======================== -->
+
+<!-- EC Edit Modal -->
+<div id="editModal" class="modal-overlay">
+    <div class="modal-panel">
+        <div class="modal-header">
+            <div class="modal-title"><div class="modal-title-icon"><i class="fas fa-edit"></i></div> Edit EC Record</div>
+            <button class="modal-close" onclick="closeEditModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
             <form id="editForm" onsubmit="saveRecord(event)">
                 <input type="hidden" id="edit-id">
-                
-                <!-- General Information Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Facility (SC)</label>
-                        <input type="text" id="edit-reporting-unit" class="w-full px-3 border border-gray-300 rounded-md text-sm font-semibold text-gray-700 bg-gray-100 cursor-not-allowed outline-none py-2" readonly>
-                    </div>
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Meeting Date</label>
-                        <input type="date" id="edit-meeting-date" class="w-full px-3 border border-gray-300 rounded-md text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon py-2" required>
-                    </div>
+                <div class="form-grid form-grid-2" style="margin-bottom:16px">
+                    <div class="form-group"><label class="form-label">Facility (SC)</label><input type="text" id="edit-reporting-unit" class="form-input" readonly></div>
+                    <div class="form-group"><label class="form-label">Meeting Date</label><input type="date" id="edit-meeting-date" class="form-input" required></div>
                 </div>
-
-                <!-- Attendance Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total EC Attended</label>
-                        <input type="number" id="edit-total-ec" class="w-full px-3 border border-gray-300 rounded-md text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon py-2" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Teenage EC Attended</label>
-                        <input type="number" id="edit-teenage-ec" class="w-full px-3 border border-gray-300 rounded-md text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon py-2" min="0" required>
-                    </div>
+                <div class="form-grid form-grid-2" style="margin-bottom:16px">
+                    <div class="form-group"><label class="form-label">Total EC Attended</label><input type="number" id="edit-total-ec" class="form-input" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Teenage EC Attended</label><input type="number" id="edit-teenage-ec" class="form-input" min="0" required></div>
                 </div>
-
-                <!-- Methods Section Title -->
-                <h3 class="text-xs font-extrabold text-maroon uppercase tracking-wider mb-3 border-b border-dashed border-gray-300 pb-1 flex items-center gap-1.5">
-                    <i class="fas fa-boxes text-maroon"></i> Contraceptive Methods
-                </h3>
-                
-                <!-- Methods Inputs Grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">F. Steril</label>
-                        <input type="number" id="edit-f-steril" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">M. Steril</label>
-                        <input type="number" id="edit-m-steril" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">IUCD</label>
-                        <input type="number" id="edit-iucd" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Antara</label>
-                        <input type="number" id="edit-antara" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">CC</label>
-                        <input type="number" id="edit-cc" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">OP</label>
-                        <input type="number" id="edit-op" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">ECP</label>
-                        <input type="number" id="edit-ecp" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Chhaya</label>
-                        <input type="number" id="edit-chhaya" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
+                <div class="form-section-title"><i class="fas fa-boxes"></i> Contraceptive Methods</div>
+                <div class="form-grid form-grid-4" style="margin-top:12px;margin-bottom:20px">
+                    <div class="form-group"><label class="form-label">F.Steril</label><input type="number" id="edit-f-steril" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">M.Steril</label><input type="number" id="edit-m-steril" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">IUCD</label><input type="number" id="edit-iucd" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Antara</label><input type="number" id="edit-antara" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">CC</label><input type="number" id="edit-cc" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">OP</label><input type="number" id="edit-op" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">ECP</label><input type="number" id="edit-ecp" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Chhaya</label><input type="number" id="edit-chhaya" class="form-input text-center" min="0" required></div>
                 </div>
-
-                <!-- Form Footer -->
-                <div class="flex justify-end gap-3 border-t border-gray-200 pt-4">
-                    <button type="button" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition duration-150" onclick="closeEditModal()">Cancel</button>
-                    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-maroon rounded-md hover:bg-maroon-dark focus:outline-none focus:ring-2 focus:ring-maroon focus:ring-offset-2 transition duration-150" id="btnSaveRecord">Save Changes</button>
+                <div class="modal-footer" style="padding:0;border:none">
+                    <button type="button" class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveRecord">Save Changes</button>
                 </div>
             </form>
         </div>
     </div>
+</div>
 
-    <!-- Confirm Delete Modal -->
-    <div id="confirmModal" class="modal-overlay">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-11/12 max-w-sm p-6 text-center transform transition-all">
-            <!-- Alert Warning Icon -->
-            <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-red-100 text-red-600 mb-4 animate-pulse">
-                <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
-            </div>
-            
-            <h2 class="text-xl font-bold text-maroon mb-2">Delete Record?</h2>
-            <p class="text-sm text-gray-500 mb-6 leading-relaxed">Are you sure you want to delete this record? This action is permanent and cannot be undone.</p>
-            
-            <!-- Actions -->
-            <div class="flex justify-center gap-3">
-                <button type="button" class="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition duration-150" onclick="closeConfirmModal()">Cancel</button>
-                <button type="button" class="px-5 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition duration-150" id="btnConfirmDelete" onclick="executeDeleteRecord()">Yes, Delete</button>
-            </div>
+<!-- EC Confirm Delete -->
+<div id="confirmModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-sm" style="text-align:center;padding:32px 28px">
+        <div class="confirm-icon-wrap"><i class="fas fa-exclamation-triangle"></i></div>
+        <h2 style="font-size:1.15rem;font-weight:800;margin-bottom:8px;color:#1A0E14">Delete Record?</h2>
+        <p style="color:#8E7B85;font-size:0.87rem;margin-bottom:24px">This action is permanent and cannot be undone.</p>
+        <div style="display:flex;justify-content:center;gap:12px">
+            <button class="btn btn-ghost" onclick="closeConfirmModal()">Cancel</button>
+            <button class="btn btn-danger" id="btnConfirmDelete" onclick="executeDeleteRecord()">Yes, Delete</button>
         </div>
     </div>
+</div>
 
-    <!-- Defaulters Modal -->
-    <div id="defaultersModal" class="modal-overlay">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-11/12 max-w-md p-6 transform transition-all">
-            <!-- Modal Header -->
-            <div class="flex justify-between items-center border-b border-gray-200 pb-3 mb-4">
-                <h2 class="text-lg font-bold text-maroon flex items-center gap-2">
-                    <i class="fas fa-exclamation-circle text-maroon"></i> Defaulter Facilities
-                </h2>
-                <button class="text-gray-400 hover:text-maroon text-2xl" onclick="closeDefaultersModal()">&times;</button>
-            </div>
-            <!-- Modal Body -->
-            <div class="py-2">
-                <div id="defaultersListContainer" class="defaulter-list-scroll max-h-[300px] overflow-y-auto flex flex-col gap-2 px-1">
-                    <!-- List of non-reporting facilities will be injected here -->
-                </div>
-            </div>
-            <!-- Modal Footer -->
-            <div class="flex justify-end gap-3 border-t border-gray-200 pt-4 mt-4">
-                <button type="button" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition duration-150" onclick="closeDefaultersModal()">Close</button>
-            </div>
+<!-- EC Defaulters Modal -->
+<div id="defaultersModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-sm">
+        <div class="modal-header">
+            <div class="modal-title"><div class="modal-title-icon" style="background:linear-gradient(135deg,#FF6B6B,#EF4444)"><i class="fas fa-exclamation-circle"></i></div> EC Defaulter Facilities</div>
+            <button class="modal-close" onclick="closeDefaultersModal()"><i class="fas fa-times"></i></button>
         </div>
+        <div class="modal-body"><div id="defaultersListContainer" class="defaulter-list-scroll"></div></div>
+        <div class="modal-footer"><button class="btn btn-ghost" onclick="closeDefaultersModal()">Close</button></div>
     </div>
+</div>
 
-    <!-- Edit Delivery Modal -->
-    <div id="editDeliveryModal" class="modal-overlay">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto p-7 transform transition-all">
-            <!-- Modal Header -->
-            <div class="flex justify-between items-center border-b border-gray-200 pb-3 mb-5">
-                <h2 class="text-xl font-bold text-maroon flex items-center gap-2">
-                    <i class="fas fa-edit text-maroon"></i> Edit Delivery Record
-                </h2>
-                <button class="text-gray-400 hover:text-maroon text-2xl" onclick="closeEditDeliveryModal()">&times;</button>
-            </div>
-            
+<!-- Delivery Edit Modal -->
+<div id="editDeliveryModal" class="modal-overlay">
+    <div class="modal-panel">
+        <div class="modal-header">
+            <div class="modal-title"><div class="modal-title-icon"><i class="fas fa-baby"></i></div> Edit Delivery Record</div>
+            <button class="modal-close" onclick="closeEditDeliveryModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
             <form id="editDeliveryForm" onsubmit="saveDeliveryRecord(event)">
                 <input type="hidden" id="edit-del-id">
-                
-                <!-- General Information Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
-                    <div class="flex flex-col gap-1.5 sm:col-span-2">
-                        <label class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Facility (SC)</label>
-                        <input type="text" id="edit-del-reporting-unit" class="w-full px-3 border border-gray-300 rounded-md text-sm font-semibold text-gray-700 bg-gray-100 cursor-not-allowed outline-none py-2" readonly>
-                    </div>
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Year</label>
-                        <input type="text" id="edit-del-year" class="w-full px-3 border border-gray-300 rounded-md text-sm font-semibold text-gray-700 bg-gray-100 cursor-not-allowed outline-none py-2" readonly>
-                    </div>
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Month</label>
-                        <input type="text" id="edit-del-month" class="w-full px-3 border border-gray-300 rounded-md text-sm font-semibold text-gray-700 bg-gray-100 cursor-not-allowed outline-none py-2" readonly>
-                    </div>
+                <div class="form-grid form-grid-3" style="margin-bottom:16px">
+                    <div class="form-group" style="grid-column:span 2"><label class="form-label">Facility (SC)</label><input type="text" id="edit-del-reporting-unit" class="form-input" readonly></div>
+                    <div class="form-group"><label class="form-label">Year</label><input type="text" id="edit-del-year" class="form-input" readonly></div>
+                    <div class="form-group"><label class="form-label">Month</label><input type="text" id="edit-del-month" class="form-input" readonly></div>
                 </div>
-
-                <!-- Methods Section Title -->
-                <h3 class="text-xs font-extrabold text-maroon uppercase tracking-wider mb-3 border-b border-dashed border-gray-300 pb-1 flex items-center gap-1.5">
-                    <i class="fas fa-baby text-maroon"></i> Delivery Data Elements
-                </h3>
-                
-                <!-- Methods Inputs Grid -->
-                <div class="grid grid-cols-3 gap-3 mb-6">
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Home Del.</label>
-                        <input type="number" id="edit-del-home" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Govt Del.</label>
-                        <input type="number" id="edit-del-govt" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Pvt Del.</label>
-                        <input type="number" id="edit-del-private" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Normal Del.</label>
-                        <input type="number" id="edit-del-normal" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">CS Del.</label>
-                        <input type="number" id="edit-del-cs" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Total Del.</label>
-                        <input type="number" id="edit-del-total" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Live Birth</label>
-                        <input type="number" id="edit-del-live" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Still Birth</label>
-                        <input type="number" id="edit-del-still" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Abortion</label>
-                        <input type="number" id="edit-del-abortion" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
+                <div class="form-section-title"><i class="fas fa-baby-carriage"></i> Delivery Data Elements</div>
+                <div class="form-grid form-grid-3" style="margin-top:12px;margin-bottom:20px">
+                    <div class="form-group"><label class="form-label">Home Del.</label><input type="number" id="edit-del-home" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Govt Del.</label><input type="number" id="edit-del-govt" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Pvt Del.</label><input type="number" id="edit-del-private" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Normal Del.</label><input type="number" id="edit-del-normal" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">CS Del.</label><input type="number" id="edit-del-cs" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Total Del.</label><input type="number" id="edit-del-total" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Live Birth</label><input type="number" id="edit-del-live" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Still Birth</label><input type="number" id="edit-del-still" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">Abortion</label><input type="number" id="edit-del-abortion" class="form-input text-center" min="0" required></div>
                 </div>
-
-                <!-- Form Footer -->
-                <div class="flex justify-end gap-3 border-t border-gray-200 pt-4">
-                    <button type="button" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition duration-150" onclick="closeEditDeliveryModal()">Cancel</button>
-                    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-maroon rounded-md hover:bg-maroon-dark focus:outline-none focus:ring-2 focus:ring-maroon focus:ring-offset-2 transition duration-150" id="btnSaveDeliveryRecord">Save Changes</button>
+                <div class="modal-footer" style="padding:0;border:none">
+                    <button type="button" class="btn btn-ghost" onclick="closeEditDeliveryModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveDeliveryRecord">Save Changes</button>
                 </div>
             </form>
         </div>
     </div>
+</div>
 
-    <!-- Confirm Delete Delivery Modal -->
-    <div id="confirmDeliveryModal" class="modal-overlay">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-11/12 max-w-sm p-6 text-center transform transition-all">
-            <!-- Alert Warning Icon -->
-            <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-red-100 text-red-600 mb-4 animate-pulse">
-                <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
-            </div>
-            
-            <h2 class="text-xl font-bold text-maroon mb-2">Delete Delivery Record?</h2>
-            <p class="text-sm text-gray-500 mb-6 leading-relaxed">Are you sure you want to delete this record? This action is permanent and cannot be undone.</p>
-            
-            <!-- Actions -->
-            <div class="flex justify-center gap-3">
-                <button type="button" class="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition duration-150" onclick="closeDeliveryConfirmModal()">Cancel</button>
-                <button type="button" class="px-5 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition duration-150" id="btnConfirmDelDelete" onclick="executeDeleteDeliveryRecord()">Yes, Delete</button>
-            </div>
+<!-- Delivery Confirm Delete -->
+<div id="confirmDeliveryModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-sm" style="text-align:center;padding:32px 28px">
+        <div class="confirm-icon-wrap"><i class="fas fa-exclamation-triangle"></i></div>
+        <h2 style="font-size:1.15rem;font-weight:800;margin-bottom:8px;color:#1A0E14">Delete Delivery Record?</h2>
+        <p style="color:#8E7B85;font-size:0.87rem;margin-bottom:24px">This action is permanent and cannot be undone.</p>
+        <div style="display:flex;justify-content:center;gap:12px">
+            <button class="btn btn-ghost" onclick="closeDeliveryConfirmModal()">Cancel</button>
+            <button class="btn btn-danger" id="btnConfirmDelDelete" onclick="executeDeleteDeliveryRecord()">Yes, Delete</button>
         </div>
     </div>
+</div>
 
-    <!-- Delivery Defaulters Modal -->
-    <div id="defaultersDeliveryModal" class="modal-overlay">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-11/12 max-w-md p-6 transform transition-all">
-            <!-- Modal Header -->
-            <div class="flex justify-between items-center border-b border-gray-200 pb-3 mb-4">
-                <h2 class="text-lg font-bold text-maroon flex items-center gap-2">
-                    <i class="fas fa-exclamation-circle text-maroon"></i> Defaulter Facilities (Delivery)
-                </h2>
-                <button class="text-gray-400 hover:text-maroon text-2xl" onclick="closeDelDefaultersModal()">&times;</button>
-            </div>
-            <!-- Modal Body -->
-            <div class="py-2">
-                <div id="delDefaultersListContainer" class="defaulter-list-scroll max-h-[300px] overflow-y-auto flex flex-col gap-2 px-1">
-                    <!-- List of non-reporting facilities will be injected here -->
-                </div>
-            </div>
-            <!-- Modal Footer -->
-            <div class="flex justify-end gap-3 border-t border-gray-200 pt-4 mt-4">
-                <button type="button" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition duration-150" onclick="closeDelDefaultersModal()">Close</button>
-            </div>
+<!-- Delivery Defaulters Modal -->
+<div id="defaultersDeliveryModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-sm">
+        <div class="modal-header">
+            <div class="modal-title"><div class="modal-title-icon" style="background:linear-gradient(135deg,#FF6B6B,#EF4444)"><i class="fas fa-exclamation-circle"></i></div> Delivery Defaulters</div>
+            <button class="modal-close" onclick="closeDelDefaultersModal()"><i class="fas fa-times"></i></button>
         </div>
+        <div class="modal-body"><div id="delDefaultersListContainer" class="defaulter-list-scroll"></div></div>
+        <div class="modal-footer"><button class="btn btn-ghost" onclick="closeDelDefaultersModal()">Close</button></div>
     </div>
+</div>
 
-    <!-- Edit IDCF Modal -->
-    <div id="editIdcfModal" class="modal-overlay">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto p-7 transform transition-all">
-            <!-- Modal Header -->
-            <div class="flex justify-between items-center border-b border-gray-200 pb-3 mb-5">
-                <h2 class="text-xl font-bold text-maroon flex items-center gap-2">
-                    <i class="fas fa-edit text-maroon"></i> Edit IDCF Record
-                </h2>
-                <button class="text-gray-400 hover:text-maroon text-2xl" onclick="closeEditIdcfModal()">&times;</button>
-            </div>
-            
-            <form id="editIdcfForm" onsubmit="saveIdcfRecord(event)">
-                <input type="hidden" id="edit-idcf-id">
-                
-                <!-- General Information -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Facility (SC)</label>
-                        <input type="text" id="edit-idcf-facility" class="w-full px-3 border border-gray-300 rounded-md text-sm font-semibold text-gray-700 bg-gray-100 cursor-not-allowed outline-none py-2" readonly>
-                    </div>
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">ORS Corner Created</label>
-                        <select id="edit-idcf-ors-corner" class="w-full px-3 border border-gray-300 rounded-md text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon py-2" required>
-                            <option value="Yes">Yes</option>
-                            <option value="No">No</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Data Elements Section Title -->
-                <h3 class="text-xs font-extrabold text-maroon uppercase tracking-wider mb-3 border-b border-dashed border-gray-300 pb-1 flex items-center gap-1.5">
-                    <i class="fas fa-tint text-maroon"></i> IDCF Data Elements
-                </h3>
-                
-                <!-- Data Inputs Grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Villages Served</label>
-                        <input type="number" id="edit-idcf-villages-served" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Villages ORS Dist.</label>
-                        <input type="number" id="edit-idcf-villages-ors" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Children (0-5)</label>
-                        <input type="number" id="edit-idcf-children-05" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Children ORS</label>
-                        <input type="number" id="edit-idcf-children-ors" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Diarrhea</label>
-                        <input type="number" id="edit-idcf-diarrhea" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Diarrhea ORS</label>
-                        <input type="number" id="edit-idcf-diarrhea-ors" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Diarrhea Zinc</label>
-                        <input type="number" id="edit-idcf-diarrhea-zinc" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Danger Ref.</label>
-                        <input type="number" id="edit-idcf-danger-ref" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Schools HW</label>
-                        <input type="number" id="edit-idcf-schools-hw" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                </div>
-
-                <!-- Form Footer -->
-                <div class="flex justify-end gap-3 border-t border-gray-200 pt-4">
-                    <button type="button" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition duration-150" onclick="closeEditIdcfModal()">Cancel</button>
-                    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-maroon rounded-md hover:bg-maroon-dark focus:outline-none focus:ring-2 focus:ring-maroon focus:ring-offset-2 transition duration-150" id="btnSaveIdcfRecord">Save Changes</button>
-                </div>
-            </form>
+<!-- Vitamin A Edit Modal -->
+<div id="editVitaminAModal" class="modal-overlay">
+    <div class="modal-panel">
+        <div class="modal-header">
+            <div class="modal-title"><div class="modal-title-icon"><i class="fas fa-capsules"></i></div> Edit Vitamin A Record</div>
+            <button class="modal-close" onclick="closeEditVitaminAModal()"><i class="fas fa-times"></i></button>
         </div>
-    </div>
-
-    <!-- Confirm Delete IDCF Modal -->
-    <div id="confirmIdcfModal" class="modal-overlay">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-11/12 max-w-sm p-6 text-center transform transition-all">
-            <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-red-100 text-red-600 mb-4 animate-pulse">
-                <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
-            </div>
-            
-            <h2 class="text-xl font-bold text-maroon mb-2">Delete IDCF Record?</h2>
-            <p class="text-sm text-gray-500 mb-6 leading-relaxed">Are you sure you want to delete this record? This action is permanent and cannot be undone.</p>
-            
-            <div class="flex justify-center gap-3">
-                <button type="button" class="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition duration-150" onclick="closeIdcfConfirmModal()">Cancel</button>
-                <button type="button" class="px-5 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition duration-150" id="btnConfirmIdcfDelete" onclick="executeDeleteIdcfRecord()">Yes, Delete</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- IDCF Defaulters Modal -->
-    <div id="defaultersIdcfModal" class="modal-overlay">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-11/12 max-w-md p-6 transform transition-all">
-            <div class="flex justify-between items-center border-b border-gray-200 pb-3 mb-4">
-                <h2 class="text-lg font-bold text-maroon flex items-center gap-2">
-                    <i class="fas fa-exclamation-circle text-maroon"></i> Defaulter Facilities (IDCF)
-                </h2>
-                <button class="text-gray-400 hover:text-maroon text-2xl" onclick="closeIdcfDefaultersModal()">&times;</button>
-            </div>
-            <div class="py-2">
-                <div id="idcfDefaultersListContainer" class="defaulter-list-scroll max-h-[300px] overflow-y-auto flex flex-col gap-2 px-1">
-                </div>
-            </div>
-            <div class="flex justify-end gap-3 border-t border-gray-200 pt-4 mt-4">
-                <button type="button" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition duration-150" onclick="closeIdcfDefaultersModal()">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Vitamin A Modal -->
-    <div id="editVitaminAModal" class="modal-overlay">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto p-7 transform transition-all">
-            <div class="flex justify-between items-center border-b border-gray-200 pb-3 mb-5">
-                <h2 class="text-xl font-bold text-maroon flex items-center gap-2">
-                    <i class="fas fa-edit text-maroon"></i> Edit Vitamin A Record
-                </h2>
-                <button class="text-gray-400 hover:text-maroon text-2xl" onclick="closeEditVitaminAModal()">&times;</button>
-            </div>
-            
+        <div class="modal-body">
             <form id="editVitaminAForm" onsubmit="saveVitaminARecord(event)">
                 <input type="hidden" id="edit-va-id">
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Facility</label>
-                        <input type="text" id="edit-va-facility" class="w-full px-3 border border-gray-300 rounded-md text-sm font-semibold text-gray-700 bg-gray-100 cursor-not-allowed outline-none py-2" readonly>
-                    </div>
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Round</label>
-                        <input type="text" id="edit-va-round" class="w-full px-3 border border-gray-300 rounded-md text-sm font-semibold text-gray-700 bg-gray-100 cursor-not-allowed outline-none py-2" readonly>
-                    </div>
+                <div class="form-grid form-grid-2" style="margin-bottom:16px">
+                    <div class="form-group"><label class="form-label">Facility</label><input type="text" id="edit-va-facility" class="form-input" readonly></div>
+                    <div class="form-group"><label class="form-label">Round</label><input type="text" id="edit-va-round" class="form-input" readonly></div>
                 </div>
-
-                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
-                    <!-- 9-12m -->
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">9-12m Due</label>
-                        <input type="number" id="edit-va-9-12-due" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">9-12m Rec</label>
-                        <input type="number" id="edit-va-9-12-rec" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-
-                    <!-- 1-2yr -->
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">1-2y Due</label>
-                        <input type="number" id="edit-va-12-24-due" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">1-2y Rec</label>
-                        <input type="number" id="edit-va-12-24-rec" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-
-                    <!-- 2-3yr -->
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">2-3y Due</label>
-                        <input type="number" id="edit-va-24-36-due" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">2-3y Rec</label>
-                        <input type="number" id="edit-va-24-36-rec" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-
-                    <!-- 3-5yr -->
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">3-5y Due</label>
-                        <input type="number" id="edit-va-36-60-due" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">3-5y Rec</label>
-                        <input type="number" id="edit-va-36-60-rec" class="border border-gray-300 rounded-md py-1.5 px-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon text-center" min="0" required>
-                    </div>
+                <div class="form-section-title"><i class="fas fa-vial"></i> Vitamin A Doses</div>
+                <div class="form-grid form-grid-4" style="margin-top:12px;margin-bottom:20px">
+                    <div class="form-group"><label class="form-label">9-12m Due</label><input type="number" id="edit-va-9-12-due" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">9-12m Rec.</label><input type="number" id="edit-va-9-12-rec" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">1-2y Due</label><input type="number" id="edit-va-12-24-due" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">1-2y Rec.</label><input type="number" id="edit-va-12-24-rec" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">2-3y Due</label><input type="number" id="edit-va-24-36-due" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">2-3y Rec.</label><input type="number" id="edit-va-24-36-rec" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">3-5y Due</label><input type="number" id="edit-va-36-60-due" class="form-input text-center" min="0" required></div>
+                    <div class="form-group"><label class="form-label">3-5y Rec.</label><input type="number" id="edit-va-36-60-rec" class="form-input text-center" min="0" required></div>
                 </div>
-
-                <div class="flex justify-end gap-3 border-t border-gray-200 pt-4">
-                    <button type="button" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition duration-150" onclick="closeEditVitaminAModal()">Cancel</button>
-                    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-maroon rounded-md hover:bg-maroon-dark transition duration-150" id="btnSaveVitaminARecord">Save Changes</button>
+                <div class="modal-footer" style="padding:0;border:none">
+                    <button type="button" class="btn btn-ghost" onclick="closeEditVitaminAModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveVitaminARecord">Save Changes</button>
                 </div>
             </form>
         </div>
     </div>
+</div>
 
-    <!-- Confirm Delete Vitamin A Modal -->
-    <div id="confirmVitaminAModal" class="modal-overlay">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-11/12 max-w-sm p-6 text-center transform transition-all">
-            <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-red-100 text-red-600 mb-4 animate-pulse">
-                <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
-            </div>
-            <h2 class="text-xl font-bold text-maroon mb-2">Delete Record?</h2>
-            <p class="text-sm text-gray-500 mb-6 leading-relaxed">Are you sure you want to delete this record? This action is permanent.</p>
-            <div class="flex justify-center gap-3">
-                <button type="button" class="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50" onclick="closeVitaminAConfirmModal()">Cancel</button>
-                <button type="button" class="px-5 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700" id="btnConfirmVitaminADelete" onclick="executeDeleteVitaminARecord()">Yes, Delete</button>
-            </div>
+<!-- Vitamin A Confirm Delete -->
+<div id="confirmVitaminAModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-sm" style="text-align:center;padding:32px 28px">
+        <div class="confirm-icon-wrap"><i class="fas fa-exclamation-triangle"></i></div>
+        <h2 style="font-size:1.15rem;font-weight:800;margin-bottom:8px;color:#1A0E14">Delete Record?</h2>
+        <p style="color:#8E7B85;font-size:0.87rem;margin-bottom:24px">This action is permanent and cannot be undone.</p>
+        <div style="display:flex;justify-content:center;gap:12px">
+            <button class="btn btn-ghost" onclick="closeVitaminAConfirmModal()">Cancel</button>
+            <button class="btn btn-danger" id="btnConfirmVitaminADelete" onclick="executeDeleteVitaminARecord()">Yes, Delete</button>
         </div>
     </div>
+</div>
 
-    <!-- Vitamin A Defaulters Modal -->
-    <div id="defaultersVitaminAModal" class="modal-overlay">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-11/12 max-w-md p-6 transform transition-all">
-            <div class="flex justify-between items-center border-b border-gray-200 pb-3 mb-4">
-                <h2 class="text-lg font-bold text-maroon flex items-center gap-2">
-                    <i class="fas fa-exclamation-circle text-maroon"></i> Defaulter Facilities (Vitamin A)
-                </h2>
-                <button class="text-gray-400 hover:text-maroon text-2xl" onclick="closeVitaminADefaultersModal()">&times;</button>
-            </div>
-            <div class="py-2">
-                <div id="vitaminADefaultersListContainer" class="defaulter-list-scroll max-h-[300px] overflow-y-auto flex flex-col gap-2 px-1">
-                </div>
-            </div>
-            <div class="flex justify-end gap-3 border-t border-gray-200 pt-4 mt-4">
-                <button type="button" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50" onclick="closeVitaminADefaultersModal()">Close</button>
-            </div>
+<!-- Vitamin A Defaulters Modal -->
+<div id="defaultersVitaminAModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-sm">
+        <div class="modal-header">
+            <div class="modal-title"><div class="modal-title-icon" style="background:linear-gradient(135deg,#FF6B6B,#EF4444)"><i class="fas fa-exclamation-circle"></i></div> Vitamin A Defaulters</div>
+            <button class="modal-close" onclick="closeVitaminADefaultersModal()"><i class="fas fa-times"></i></button>
         </div>
+        <div class="modal-body"><div id="vitaminADefaultersListContainer" class="defaulter-list-scroll"></div></div>
+        <div class="modal-footer"><button class="btn btn-ghost" onclick="closeVitaminADefaultersModal()">Close</button></div>
     </div>
+</div>
 
-    <!-- Edit WPD Modal -->
-    <div id="editWpdModal" class="modal-overlay">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto p-7 transform transition-all">
-            <div class="flex justify-between items-center border-b border-gray-200 pb-3 mb-5">
-                <h2 class="text-xl font-bold text-maroon flex items-center gap-2">
-                    <i class="fas fa-edit text-maroon"></i> Edit WPD Record
-                </h2>
-                <button class="text-gray-400 hover:text-maroon text-2xl" onclick="closeEditWpdModal()">&times;</button>
-            </div>
-            
+<!-- WPD Edit Modal -->
+<div id="editWpdModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-lg">
+        <div class="modal-header">
+            <div class="modal-title"><div class="modal-title-icon"><i class="fas fa-file-medical"></i></div> Edit WPF Record</div>
+            <button class="modal-close" onclick="closeEditWpdModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
             <form id="editWpdForm" onsubmit="saveWpdRecord(event)">
                 <input type="hidden" id="edit-wpd-id">
-                
-                <div id="editWpdFieldsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                    <!-- Dynamic fields will be injected here by JS -->
-                </div>
-
-                <div class="flex justify-end gap-3 border-t border-gray-200 pt-4">
-                    <button type="button" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition duration-150" onclick="closeEditWpdModal()">Cancel</button>
-                    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-maroon rounded-md hover:bg-maroon-dark transition duration-150" id="btnSaveWpdRecord">Save Changes</button>
+                <div id="editWpdFieldsContainer" style="margin-bottom:20px; display: flex; flex-direction: column; gap: 24px;"></div>
+                <div class="modal-footer" style="padding:0;border:none">
+                    <button type="button" class="btn btn-ghost" onclick="closeEditWpdModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveWpdRecord">Save Changes</button>
                 </div>
             </form>
         </div>
     </div>
+</div>
 
-    <!-- Confirm Delete WPD Modal -->
-    <div id="confirmWpdModal" class="modal-overlay">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-11/12 max-w-sm p-6 text-center transform transition-all">
-            <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-red-100 text-red-600 mb-4 animate-pulse">
-                <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
-            </div>
-            <h2 class="text-xl font-bold text-maroon mb-2">Delete WPD Record?</h2>
-            <p class="text-sm text-gray-500 mb-6 leading-relaxed">Are you sure you want to delete this record? This action is permanent.</p>
-            <div class="flex justify-center gap-3">
-                <button type="button" class="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50" onclick="closeWpdConfirmModal()">Cancel</button>
-                <button type="button" class="px-5 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700" id="btnConfirmWpdDelete" onclick="executeDeleteWpdRecord()">Yes, Delete</button>
-            </div>
+<!-- WPD Confirm Delete -->
+<div id="confirmWpdModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-sm" style="text-align:center;padding:32px 28px">
+        <div class="confirm-icon-wrap"><i class="fas fa-exclamation-triangle"></i></div>
+        <h2 style="font-size:1.15rem;font-weight:800;margin-bottom:8px;color:#1A0E14">Delete WPF Record?</h2>
+        <p style="color:#8E7B85;font-size:0.87rem;margin-bottom:24px">This action is permanent and cannot be undone.</p>
+        <div style="display:flex;justify-content:center;gap:12px">
+            <button class="btn btn-ghost" onclick="closeWpdConfirmModal()">Cancel</button>
+            <button class="btn btn-danger" id="btnConfirmWpdDelete" onclick="executeDeleteWpdRecord()">Yes, Delete</button>
         </div>
     </div>
+</div>
 
-    <!-- WPD Defaulters Modal -->
-    <div id="defaultersWpdModal" class="modal-overlay">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-xl w-11/12 max-w-md p-6 transform transition-all">
-            <div class="flex justify-between items-center border-b border-gray-200 pb-3 mb-4">
-                <h2 class="text-lg font-bold text-maroon flex items-center gap-2">
-                    <i class="fas fa-exclamation-circle text-maroon"></i> Defaulter Facilities (WPD)
-                </h2>
-                <button class="text-gray-400 hover:text-maroon text-2xl" onclick="closeWpdDefaultersModal()">&times;</button>
-            </div>
-            <div class="py-2">
-                <div id="wpdDefaultersListContainer" class="defaulter-list-scroll max-h-[300px] overflow-y-auto flex flex-col gap-2 px-1">
+<!-- WPD Defaulters Modal -->
+<div id="defaultersWpdModal" class="modal-overlay">
+    <div class="modal-panel modal-panel-sm">
+        <div class="modal-header">
+            <div class="modal-title"><div class="modal-title-icon" style="background:linear-gradient(135deg,#FF6B6B,#EF4444)"><i class="fas fa-exclamation-circle"></i></div> WPF Defaulters</div>
+            <button class="modal-close" onclick="closeWpdDefaultersModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body"><div id="wpdDefaultersListContainer" class="defaulter-list-scroll"></div></div>
+        <div class="modal-footer"><button class="btn btn-ghost" onclick="closeWpdDefaultersModal()">Close</button></div>
+    </div>
+</div>
+
+<!-- WPD Top/Bottom 5 Modal -->
+<div class="modal-overlay" id="wpdModal" onclick="closeWpdModal(event)">
+    <div class="modal-panel modal-panel-sm" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <div class="modal-title">
+                <div class="modal-title-icon" style="background: linear-gradient(135deg, var(--teal-500), var(--teal-600)); color: white;">
+                    <i class="fas fa-trophy"></i>
                 </div>
+                <span id="wpdModalTitle">Top 5 & Bottom 5</span>
             </div>
-            <div class="flex justify-end gap-3 border-t border-gray-200 pt-4 mt-4">
-                <button type="button" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition duration-150" onclick="closeWpdDefaultersModal()">Close</button>
+            <button class="modal-close" onclick="closeWpdModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" style="padding: 24px; max-height: 70vh; overflow-y: auto;">
+            <div class="modal-list-title" style="color: #059669; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-arrow-trend-up"></i> Top 5 Performing Facilities
             </div>
+            <div id="wpdModalTopList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            
+            <div class="modal-list-title" style="color: #DC2626; margin-top: 24px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-arrow-trend-down"></i> Bottom 5 Facilities
+            </div>
+            <div id="wpdModalBottomList" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
     </div>
+</div>
 
-    <!-- Main JavaScript Logic -->
-    <script src="app_v2.js"></script>
+<!-- Toast Container -->
+<div id="toastContainer"></div>
 
-    <!-- Top/Bottom 5 Modal -->
-    <div class="modal-overlay" id="wpdModal" onclick="closeWpdModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <h3 id="wpdModalTitle">Top 5 & Bottom 5</h3>
-                <button class="modal-close" onclick="closeWpdModal()"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body">
-                <div class="modal-list-title">Top 5 Facilities</div>
-                <ul class="modal-list" id="wpdModalTopList">
-                    <!-- Injected via JS -->
-                </ul>
-                <div class="modal-list-title">Bottom 5 Facilities</div>
-                <ul class="modal-list" id="wpdModalBottomList">
-                    <!-- Injected via JS -->
-                </ul>
-            </div>
-        </div>
-    </div>
+<!-- Mobile Bottom Nav -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <a class="mob-nav-item active" id="mobNavDashboard" onclick="switchView('dashboard')" href="#"><i class="fas fa-chart-pie"></i><span>Home</span></a>
+    <a class="mob-nav-item" id="mobNavEcReport" onclick="switchView('ec-report')" href="#"><i class="fas fa-clipboard-list"></i><span>EC</span></a>
+    <a class="mob-nav-item" id="mobNavDelivery" onclick="switchView('delivery')" href="#"><i class="fas fa-baby"></i><span>Delivery</span></a>
+    <a class="mob-nav-item" id="mobNavWpdReport" onclick="switchView('wpd-report')" href="#"><i class="fas fa-file-medical"></i><span>WPF</span></a>
+    <a class="mob-nav-item" id="mobNavVitaminA" onclick="switchView('vitamin-a')" href="#"><i class="fas fa-capsules"></i><span>Vit A</span></a>
+</nav>
+
+<!-- Main App Logic (copy of app_v2.js with minor adaptations) -->
+<script src="app_v2.js"></script>
+<script>
+// Clock
+function updateClock() {
+    const now = new Date();
+    const el = document.getElementById('sidebarClock');
+    if (el) el.textContent = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' • ' + now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// Sidebar toggle (new version)
+window.toggleSidebar = function() {
+    const sidebar = document.getElementById('mainSidebar');
+    sidebar.classList.toggle('collapsed');
+    sidebar.classList.toggle('mobile-open');
+}
+</script>
 </body>
 </html>

@@ -2,27 +2,8 @@
 const SUPABASE_URL = 'https://kijqcmumynutyhodxjwo.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_3vIQeWE4irMp3ni9vSw7fg_2sgzjurY';
 
-// Initialize Supabase Client safely so the UI can still load in restricted environments.
-const supabaseClient = window.supabase && typeof window.supabase.createClient === 'function'
-    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
-    : null;
-
-function guardSupabaseAccess(targetBody, fallbackMessage = 'Unable to fetch data from the configured data source.') {
-    if (supabaseClient) return false;
-
-    if (targetBody) {
-        targetBody.innerHTML = `
-            <tr class="no-data-row">
-                <td colspan="13" style="color: var(--color-maroon); font-weight: 600;">
-                    ${fallbackMessage}
-                </td>
-            </tr>
-        `;
-    }
-
-    showToast('Supabase is unavailable in this browser context. Serve the page over HTTP and retry.', 'error');
-    return true;
-}
+// Initialize Supabase Client
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // GP to SC (Sub Center) Mapping
 const gpMapping = {
@@ -233,6 +214,22 @@ window.switchView = function (viewName) {
             drawVitaminATable();
         }
     }
+
+    // Sync mobile bottom nav active state
+    const mobMap = {
+        'dashboard': 'mobNavDashboard',
+        'ec-report': 'mobNavEcReport',
+        'delivery': 'mobNavDelivery',
+        'wpd-report': 'mobNavWpdReport',
+        'idcf': 'mobNavIdcf',
+        'vitamin-a': 'mobNavVitaminA'
+    };
+    document.querySelectorAll('.mob-nav-item').forEach(el => el.classList.remove('active'));
+    const activeId = mobMap[viewName];
+    if (activeId) { const el = document.getElementById(activeId); if (el) el.classList.add('active'); }
+
+    // Scroll to top on mobile view switch
+    if (window.innerWidth <= 768) window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ----------------------------------------------------
@@ -280,8 +277,10 @@ function renderTable() {
         const scsHtml = item.scList.map(sc => {
             const isMatch = searchTerm && sc.toLowerCase().includes(searchTerm.toLowerCase());
             const highlightedSc = highlightText(sc, searchTerm);
-            return isMatch ? `<mark class="sc-highlight">${highlightedSc}</mark>` : highlightedSc;
-        }).join(', ');
+            return isMatch
+                ? `<span class="sc-pill" style="background:var(--pink-100);border-color:var(--pink-300);color:var(--pink-700)">${highlightedSc}</span>`
+                : `<span class="sc-pill">${highlightedSc}</span>`;
+        }).join('');
 
         const row = document.createElement('tr');
         row.className = 'main-row';
@@ -346,10 +345,6 @@ window.refreshDashboard = function () {
 // EC MEETING REPORT VIEW LOGIC
 // ----------------------------------------------------
 async function fetchEcMeetingData() {
-    if (guardSupabaseAccess(reportTableBody, 'Supabase is not available. The EC report cannot load in this browser session.')) {
-        return;
-    }
-
     try {
         reportTableBody.innerHTML = `
             <tr class="loading-row">
@@ -960,17 +955,21 @@ window.openDelDefaultersModal = function () {
 
     if (currentDelDefaulters.length === 0) {
         container.innerHTML = `
-            <div style="text-align: center; padding: 24px; color: var(--color-text-muted);">
-                <i class="fas fa-check-circle" style="color: #2e7d32; font-size: 2.5rem; margin-bottom: 12px; display: block;"></i>
-                All facilities have reported. No defaulters!
+            <div style="text-align: center; padding: 40px 20px; color: #059669;">
+                <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 16px; display: block; color: #10B981;"></i>
+                <p style="font-size: 1.1rem; font-weight: 700;">All facilities have submitted Delivery Coverage data!</p>
             </div>
         `;
     } else {
         const sortedDefaulters = [...currentDelDefaulters].sort();
-        container.innerHTML = sortedDefaulters.map(sc => `
-            <div class="defaulter-item">
-                <i class="fas fa-exclamation-circle"></i>
-                <span>${sc}</span>
+        container.innerHTML = sortedDefaulters.map(f => `
+            <div class="defaulter-card">
+                <div class="defaulter-card-icon"><i class="fas fa-hospital"></i></div>
+                <div class="defaulter-card-content">
+                    <div class="defaulter-card-title">${f}</div>
+                    <div class="defaulter-card-sub">Missing Submission</div>
+                </div>
+                <div class="defaulter-badge">Not Submitted</div>
             </div>
         `).join('');
     }
@@ -1541,12 +1540,14 @@ function getWpdRowValue(row, candidates) {
 function getWpdDisplayColumns(rows) {
     const exclude = new Set([
         'id', 'created_at', 'updated_at', 'inserted_at', 'updated_on', 'timestamp',
-        'reporting_year', 'year', 'reporting_month', 'month', 'date', 'meeting_date', 'reporting_date', 'date_of_reporting',
+        'reporting_year', 'year', 'reporting_month', 'month', 'meeting_date',
         'gp', 'gram_panchayat'
     ]);
     const priority = ['facility', 'facility_name', 'reporting_unit', 'subcenter', 'sub_center_name', 'subcenter_name', 'subcentre', 'sub_center'];
+    const dateFields = ['date_of_reporting', 'reporting_date', 'date'];
 
     const columns = [];
+    const dateColumns = [];
     const seen = new Set();
 
     priority.forEach(key => {
@@ -1562,10 +1563,17 @@ function getWpdDisplayColumns(rows) {
         Object.keys(row || {}).forEach(key => {
             const normalized = key.toLowerCase();
             if (seen.has(key) || exclude.has(normalized)) return;
+            if (dateFields.includes(normalized)) {
+                if (!dateColumns.includes(key)) dateColumns.push(key);
+                seen.add(key);
+                return;
+            }
             columns.push(key);
             seen.add(key);
         });
     });
+
+    dateColumns.forEach(k => columns.push(k));
 
     return columns.filter(Boolean);
 }
@@ -1604,13 +1612,9 @@ function formatWpdCellValue(value) {
 }
 
 async function fetchWpdData() {
-    const dashContainer = document.getElementById('wpdTableBody');
+    const dashContainer = document.getElementById('wpdTableWrapper');
     if (dashContainer) {
-        dashContainer.innerHTML = '<tr class="loading-row"><td colspan="8"><i class="fas fa-spinner fa-spin"></i> Loading WPD data...</td></tr>';
-    }
-
-    if (guardSupabaseAccess(dashContainer, 'Supabase is not available. The WPD report cannot load in this browser session.')) {
-        return;
+        dashContainer.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray-500)"><i class="fas fa-spinner fa-spin" style="color:var(--teal-500)"></i> Loading WPF data...</div>';
     }
 
     try {
@@ -1650,8 +1654,8 @@ async function fetchWpdData() {
             wpdData = [];
             populateWpdFilters();
             applyWpdFilters();
-            const dashEl = document.getElementById('wpdTableBody');
-            if (dashEl) dashEl.innerHTML = '<tr class="no-data-row"><td colspan="8" class="text-center" style="padding:2rem">No WPF records have been submitted yet.</td></tr>';
+            const dashEl = document.getElementById('wpdTableWrapper');
+            if (dashEl) dashEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray-500)">No WPF records have been submitted yet.</div>';
             return;
         }
 
@@ -1660,8 +1664,8 @@ async function fetchWpdData() {
         applyWpdFilters();
     } catch (error) {
         console.error('Error fetching WPD data:', error);
-        const dashEl = document.getElementById('wpdTableBody');
-        if (dashEl) dashEl.innerHTML = '<tr class="no-data-row"><td colspan="8" style="color:var(--color-maroon);font-weight:600;padding:2rem">Error loading WPD data: ' + (error.message || 'Check Supabase connection.') + '</td></tr>';
+        const dashEl = document.getElementById('wpdTableWrapper');
+        if (dashEl) dashEl.innerHTML = '<div style="padding:40px;text-align:center;color:#EF4444;font-weight:600">Error loading WPD data: ' + (error.message || 'Check Supabase connection.') + '</div>';
     }
 }
 
@@ -1773,15 +1777,6 @@ window.toggleWpdDateDropdown = function () {
         setTimeout(() => document.getElementById('wpdDateSearchInput').focus(), 50);
     }
 }
-
-// Toggle WPD Filter Section (Collapsible Card)
-window.toggleWpdFilterSection = function () {
-    const filterCard = document.getElementById('wpdFilterCard') || document.querySelector('.wpd-filter-card');
-    if (filterCard) {
-        filterCard.classList.toggle('expanded');
-    }
-}
-
 
 window.toggleWpdDateCheckbox = function (date, event) {
     if (event.target.tagName === 'INPUT') {
@@ -2044,44 +2039,40 @@ function groupWpdColumns(columns) {
 }
 
 function drawWpdTable() {
-    const thead = document.getElementById('wpdTableHead');
-    const tbody = document.getElementById('wpdTableBody');
-    const tfoot = document.getElementById('wpdTableFoot');
-    if (!thead || !tbody) return;
+    const wrapper = document.getElementById('wpdTableWrapper');
+    if (!wrapper) return;
 
-    thead.innerHTML = '';
-    tbody.innerHTML = '';
-    if (tfoot) tfoot.innerHTML = '';
+    wrapper.innerHTML = '';
     wpdStatMetrics = {};
 
     if (!filteredWpdData || filteredWpdData.length === 0) {
-        thead.innerHTML = '<tr><th colspan="8">No WPD data matches the current filters.</th></tr>';
+        wrapper.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray-500)">No WPF data matches the current filters.</div>';
         return;
     }
 
     const textFields = ['facility','facility_name','reporting_unit','subcenter','sub_center_name','subcenter_name','subcentre','sub_center'];
     const columns = getWpdDisplayColumns(filteredWpdData);
-    const groups = groupWpdColumns(columns);
+    let allGroups = groupWpdColumns(columns);
 
-    // Build flat list of data columns (skip text identifiers & computed totals)
-    const flatCols = groups.flatMap(g => {
-        if (g.isGroup) return g.columns.filter(c => !c.isComputedTotal);
-        return textFields.includes((g.original || '').toLowerCase()) ? [] : [g];
+    // Filter out text fields from groups because we always pin Facility to the left
+    const dataGroups = allGroups.filter(g => {
+        if (!g.isGroup && textFields.includes((g.original || '').toLowerCase())) return false;
+        return true;
     });
 
-    // Find facility column (first text col)
     const facilityCol = columns.find(c => textFields.includes(c.toLowerCase())) || null;
 
-    // ---- Aggregate per-facility for modal ----
+    // Aggregate for modal stats
+    const flatCols = dataGroups.flatMap(g => g.isGroup ? g.columns.filter(c => !c.isComputedTotal) : [g]);
     const facilityAgg = {};
     filteredWpdData.forEach(row => {
         const fac = getWpdRowValue(row, textFields) || 'Unknown';
         if (!facilityAgg[fac]) facilityAgg[fac] = {};
         flatCols.forEach(colDef => {
-            if (!wpdStatMetrics[colDef.label]) wpdStatMetrics[colDef.label] = { data: [] };
-            if (facilityAgg[fac][colDef.label] === undefined) facilityAgg[fac][colDef.label] = 0;
+            if (!wpdStatMetrics[colDef.original]) wpdStatMetrics[colDef.original] = { data: [] };
+            if (facilityAgg[fac][colDef.original] === undefined) facilityAgg[fac][colDef.original] = 0;
             const v = Number(getWpdRowValue(row, [colDef.original]));
-            if (!isNaN(v)) facilityAgg[fac][colDef.label] += v;
+            if (!isNaN(v)) facilityAgg[fac][colDef.original] += v;
         });
     });
     for (const fac in facilityAgg)
@@ -2090,74 +2081,134 @@ function drawWpdTable() {
     for (const m in wpdStatMetrics)
         wpdStatMetrics[m].data.sort((a, b) => b.value - a.value);
 
-    // ---- Build header rows ----
-    const hasGroups = groups.some(g => g.isGroup);
-    let topRow = '<tr>';
-    let subRow = '<tr>';
+    // Split groups into 3 parts
+    const CHUNKS = 3;
+    const chunkSize = Math.ceil(dataGroups.length / CHUNKS);
+    
+    for (let part = 0; part < CHUNKS; part++) {
+        const chunkGroups = dataGroups.slice(part * chunkSize, (part + 1) * chunkSize);
+        if (chunkGroups.length === 0) continue;
 
-    // Sl No
-    topRow += `<th rowspan="${hasGroups ? 2 : 1}" class="freeze-col-1 text-center" style="min-width:36px;max-width:40px">#</th>`;
+        const hasGroups = chunkGroups.some(g => g.isGroup);
+        const chunkFlatCols = chunkGroups.flatMap(g => g.isGroup ? g.columns.filter(c => !c.isComputedTotal) : [g]);
+        
+        let topRow = '<tr>';
+        let subRow = '<tr>';
 
-    // Facility
-    if (facilityCol) {
-        topRow += `<th rowspan="${hasGroups ? 2 : 1}" class="freeze-col-2 text-left" style="min-width:120px">Facility</th>`;
-    }
-
-    groups.forEach(group => {
-        if (group.isGroup) {
-            const dataCols = group.columns.filter(c => !c.isComputedTotal);
-            if (!dataCols.length) return;
-            const safeGrp = (group.name || '').replace(/'/g, "\\'");
-            topRow += `<th colspan="${dataCols.length}" class="text-center" style="cursor:pointer;white-space:nowrap" onclick="openWpdModal('${safeGrp}')" title="Click for Top/Bottom 5">${formatWpdColumnName(group.name)} <i class='fas fa-chart-bar' style='font-size:0.65em;opacity:0.7'></i></th>`;
-            dataCols.forEach(col => {
-                const safeL = (col.label || '').replace(/'/g, "\\'");
-                subRow += `<th class="text-center" style="font-size:0.7rem;min-width:54px;cursor:pointer;white-space:nowrap" onclick="openWpdModal('${safeL}')" title="Click for Top/Bottom 5">${col.label.toUpperCase()}</th>`;
-            });
-        } else {
-            if (textFields.includes((group.original || '').toLowerCase())) return;
-            const safeL = (group.label || group.name || '').replace(/'/g, "\\'");
-            topRow += `<th rowspan="${hasGroups ? 2 : 1}" class="text-center" style="min-width:60px;cursor:pointer;white-space:nowrap" onclick="openWpdModal('${safeL}')" title="Click for Top/Bottom 5">${formatWpdColumnName(group.name)} <i class='fas fa-chart-bar' style='font-size:0.65em;opacity:0.7'></i></th>`;
-        }
-    });
-    topRow += '<th rowspan="' + (hasGroups ? 2 : 1) + '" class="text-center" style="min-width:60px">Actions</th></tr>';
-    subRow += '</tr>';
-    thead.innerHTML = hasGroups ? (topRow + subRow) : topRow;
-
-    // ---- Build body rows ----
-    const colTotals = {};
-    flatCols.forEach(c => colTotals[c.label] = 0);
-
-    const rows = filteredWpdData.map((row, idx) => {
-        let cells = `<td class="freeze-col-1 text-center" style="font-size:0.72rem">${idx + 1}</td>`;
+        topRow += `<th rowspan="${hasGroups ? 2 : 1}" class="text-center" style="min-width:36px;max-width:40px">#</th>`;
         if (facilityCol) {
-            const facVal = getWpdRowValue(row, textFields) || '-';
-            cells += `<td class="freeze-col-2" style="font-weight:600;font-size:0.78rem;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis" title="${facVal}">${facVal}</td>`;
+            topRow += `<th rowspan="${hasGroups ? 2 : 1}" style="min-width:140px">Facility</th>`;
         }
-        flatCols.forEach(colDef => {
-            const v = Number(getWpdRowValue(row, [colDef.original]));
-            const display = isNaN(v) ? '-' : v.toLocaleString();
-            if (!isNaN(v)) colTotals[colDef.label] += v;
-            cells += `<td class="text-center" style="font-size:0.78rem">${display}</td>`;
-        });
-        cells += `<td class="text-center" style="white-space:nowrap">
-            <button class="btn-action-edit" onclick="openEditWpdModal(${row.id})" title="Edit"><i class="fas fa-edit"></i></button>
-            <button class="btn-action-delete" onclick="openDeleteWpdConfirm(${row.id})" title="Delete"><i class="fas fa-trash"></i></button>
-        </td>`;
-        return `<tr>${cells}</tr>`;
-    });
-    tbody.innerHTML = rows.join('');
 
-    // ---- Build footer (grand total) ----
-    if (tfoot) {
-        let footCells = `<th class="freeze-col-1 text-center" style="font-size:0.72rem">-</th>`;
-        if (facilityCol) footCells += `<th class="freeze-col-2" style="font-size:0.78rem;font-weight:800">TOTAL</th>`;
-        flatCols.forEach(colDef => {
-            footCells += `<td class="text-center" style="font-size:0.78rem;font-weight:700">${colTotals[colDef.label].toLocaleString()}</td>`;
+        chunkGroups.forEach(group => {
+            if (group.isGroup) {
+                const dataCols = group.columns.filter(c => !c.isComputedTotal);
+                if (!dataCols.length) return;
+                const safeGrp = (group.name || '').replace(/'/g, "\\'");
+                const safeGrpOrig = (group.original || group.name || '').replace(/'/g, "\\'");
+                topRow += `<th colspan="${dataCols.length}" class="text-center" style="cursor:pointer;white-space:nowrap" onclick="openWpdModal('${safeGrpOrig}', '${safeGrp}')" title="Click for Top/Bottom 5">${formatWpdColumnName(group.name)} <i class='fas fa-chart-bar' style='font-size:0.65em;opacity:0.7'></i></th>`;
+                dataCols.forEach(col => {
+                    const safeL = (col.label || '').replace(/'/g, "\\'");
+                    const safeOrig = (col.original || '').replace(/'/g, "\\'");
+                    subRow += `<th class="text-center" style="font-size:0.7rem;min-width:54px;cursor:pointer;white-space:nowrap" onclick="openWpdModal('${safeOrig}', '${safeL}')" title="Click for Top/Bottom 5">${col.label.toUpperCase()}</th>`;
+                });
+            } else {
+                const safeL = (group.label || group.name || '').replace(/'/g, "\\'");
+                const safeOrig = (group.original || '').replace(/'/g, "\\'");
+                topRow += `<th rowspan="${hasGroups ? 2 : 1}" class="text-center" style="min-width:60px;cursor:pointer;white-space:nowrap" onclick="openWpdModal('${safeOrig}', '${safeL}')" title="Click for Top/Bottom 5">${formatWpdColumnName(group.name)} <i class='fas fa-chart-bar' style='font-size:0.65em;opacity:0.7'></i></th>`;
+            }
         });
-        footCells += '<td></td>';
-        tfoot.innerHTML = `<tr class="grand-total-row">${footCells}</tr>`;
+        
+        // Only show actions on the very last chunk
+        if (part === CHUNKS - 1) {
+            topRow += '<th rowspan="' + (hasGroups ? 2 : 1) + '" class="text-center" style="min-width:60px">Actions</th>';
+        }
+        
+        topRow += '</tr>';
+        subRow += '</tr>';
+        const theadHTML = hasGroups ? (topRow + subRow) : topRow;
+
+        const colTotals = {};
+        chunkFlatCols.forEach(c => colTotals[c.original] = 0);
+
+        const rowsHTML = filteredWpdData.map((row, idx) => {
+            let cells = `<td class="text-center" style="font-size:0.8rem">${idx + 1}</td>`;
+            if (facilityCol) {
+                const facVal = getWpdRowValue(row, textFields) || '-';
+                cells += `<td style="font-weight:600;font-size:0.85rem;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis" title="${facVal}">${facVal}</td>`;
+            }
+            chunkFlatCols.forEach(colDef => {
+                const rawVal = getWpdRowValue(row, [colDef.original]);
+                const numVal = Number(rawVal);
+                let display = '-';
+                if (rawVal !== '' && rawVal !== null && rawVal !== undefined) {
+                    if (colDef.original === 'date_of_reporting' || colDef.original === 'reporting_date' || colDef.original === 'date') {
+                        display = formatDateDDMMYYYY(rawVal);
+                    } else if (isNaN(numVal)) {
+                        display = String(rawVal);
+                    } else {
+                        display = numVal.toLocaleString();
+                        colTotals[colDef.original] += numVal;
+                    }
+                }
+                cells += `<td class="text-center" style="font-size:0.85rem">${display}</td>`;
+            });
+            
+            if (part === CHUNKS - 1) {
+                cells += `<td class="text-center" style="white-space:nowrap">
+                    <button class="btn-action-edit" onclick="openEditWpdModal(${row.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button class="btn-action-delete" onclick="openDeleteWpdConfirm(${row.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                </td>`;
+            }
+            return `<tr>${cells}</tr>`;
+        }).join('');
+
+        let tfootHTML = '';
+        let footCells = `<td class="text-center" style="font-size:0.8rem">-</td>`;
+        if (facilityCol) footCells += `<td style="font-size:0.85rem;font-weight:800">TOTAL</td>`;
+        chunkFlatCols.forEach(colDef => {
+            const tot = colTotals[colDef.original];
+            const display = tot > 0 ? tot.toLocaleString() : '-';
+            const safeOrig = (colDef.original || '').replace(/'/g, "\\'");
+            const safeL = (colDef.label || colDef.name || '').replace(/'/g, "\\'");
+            footCells += `<td class="text-center" style="font-size:0.85rem;font-weight:800;cursor:pointer;" onclick="openWpdModal('${safeOrig}', '${safeL}')" title="Click for Top/Bottom 5">${display}</td>`;
+        });
+        if (part === CHUNKS - 1) footCells += '<td></td>';
+        tfootHTML = `<tr class="grand-total-row">${footCells}</tr>`;
+
+        const partHtml = `
+            <div class="wpd-part-container">
+                <div class="wpd-part-header" style="cursor:pointer; display:flex; justify-content:space-between;" onclick="toggleWpdPart('wpd-part-tbody-${part}', 'wpd-part-icon-${part}')">
+                    <span>Part ${part + 1} of ${CHUNKS}</span>
+                    <i class="fas fa-chevron-right wpd-part-icon" id="wpd-part-icon-${part}" style="transition:transform 0.3s"></i>
+                </div>
+                <div class="wpd-part-table-wrapper">
+                    <table class="report-grid-table">
+                        <thead>${theadHTML}</thead>
+                        <tbody id="wpd-part-tbody-${part}" style="display:none;">${rowsHTML}</tbody>
+                        <tfoot>${tfootHTML}</tfoot>
+                    </table>
+                </div>
+            </div>
+        `;
+        
+        wrapper.insertAdjacentHTML('beforeend', partHtml);
     }
 }
+
+window.toggleWpdPart = function(tbodyId, iconId) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    const icon = document.getElementById(iconId);
+    
+    if (tbody.style.display === 'none') {
+        tbody.style.display = 'table-row-group';
+        if (icon) icon.style.transform = 'rotate(90deg)';
+    } else {
+        tbody.style.display = 'none';
+        if (icon) icon.style.transform = 'rotate(0deg)';
+    }
+};
 
 // --- WPD CRUD Operations ---
 let wpdRecordToDeleteId = null;
@@ -2172,29 +2223,62 @@ window.openEditWpdModal = function (id) {
 
     const nonEditableFields = ['id', 'created_at', 'updated_at', 'inserted_at', 'updated_on', 'timestamp'];
     
-    Object.keys(record).forEach(key => {
-        if (nonEditableFields.includes(key.toLowerCase())) return;
-        
-        const value = record[key] !== null && record[key] !== undefined ? record[key] : '';
-        const isReadonly = ['facility', 'sub_center', 'reporting_unit', 'gp', 'year', 'month'].includes(key.toLowerCase());
-        
-        let inputType = 'text';
-        if (typeof value === 'number' || (value !== '' && !isNaN(value) && !isNaN(parseFloat(value)))) {
-            inputType = 'number';
-        } else if (key.toLowerCase().includes('date')) {
-            inputType = 'date';
-        }
+    const allKeys = Object.keys(record).filter(k => !nonEditableFields.includes(k.toLowerCase()));
+    
+    // Extract identity fields vs data fields
+    const identityFields = ['facility', 'sub_center', 'subcenter_name', 'sub_center_name', 'reporting_unit', 'gp', 'year', 'month', 'date', 'reporting_date', 'date_of_reporting'];
+    const idKeys = allKeys.filter(k => identityFields.includes(k.toLowerCase()));
+    const dataKeys = allKeys.filter(k => !identityFields.includes(k.toLowerCase()));
 
-        const div = document.createElement('div');
-        div.className = 'flex flex-col gap-1.5';
-        div.innerHTML = `
-            <label class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">${formatWpdColumnName(key)}</label>
-            <input type="${inputType}" name="${key}" value="${value}" 
-                class="w-full px-3 border border-gray-300 rounded-md text-sm font-semibold py-2 ${isReadonly ? 'text-gray-700 bg-gray-100 cursor-not-allowed outline-none' : 'text-gray-800 focus:outline-none focus:border-maroon focus:ring-1 focus:ring-maroon'}" 
-                ${isReadonly ? 'readonly' : 'required'}>
-        `;
-        container.appendChild(div);
+    const groups = groupWpdColumns(dataKeys);
+
+    let html = '';
+    
+    // Render Identity Section (Readonly)
+    if (idKeys.length > 0) {
+        html += '<div class="form-section-title"><i class="fas fa-id-card"></i> Record Details</div>';
+        html += '<div class="form-grid form-grid-3">';
+        idKeys.forEach(key => {
+            const val = record[key] !== null && record[key] !== undefined ? record[key] : '';
+            let inputType = key.toLowerCase().includes('date') ? 'date' : 'text';
+            html += `<div class="form-group">
+                <label class="form-label">${formatWpdColumnName(key)}</label>
+                <input type="${inputType}" name="${key}" value="${val}" class="form-input" readonly>
+            </div>`;
+        });
+        html += '</div>';
+    }
+
+    // Render Grouped Data Sections
+    groups.forEach(group => {
+        if (group.isGroup) {
+            html += `<div class="form-section-title" style="margin-top:8px"><i class="fas fa-list-ul"></i> ${formatWpdColumnName(group.name)}</div>`;
+            html += '<div class="form-grid form-grid-4">';
+            group.columns.forEach(col => {
+                if (col.isComputedTotal) return;
+                const key = col.original;
+                const val = record[key] !== null && record[key] !== undefined ? record[key] : '';
+                html += `<div class="form-group">
+                    <label class="form-label">${col.label}</label>
+                    <input type="number" name="${key}" value="${val}" class="form-input text-center" min="0" required>
+                </div>`;
+            });
+            html += '</div>';
+        } else {
+            const key = group.original || group.name;
+            const val = record[key] !== null && record[key] !== undefined ? record[key] : '';
+            // For solitary fields, create a clean section or group them
+            html += `<div class="form-section-title" style="margin-top:8px"><i class="fas fa-check-circle"></i> ${formatWpdColumnName(group.name)}</div>`;
+            html += `<div class="form-grid form-grid-4">
+                <div class="form-group">
+                    <label class="form-label">${formatWpdColumnName(key)}</label>
+                    <input type="number" name="${key}" value="${val}" class="form-input text-center" min="0" required>
+                </div>
+            </div>`;
+        }
     });
+
+    container.innerHTML = html;
 
     document.getElementById('editWpdModal').classList.add('active');
 }
@@ -2297,17 +2381,20 @@ window.openWpdDefaultersModal = function () {
 
     if (defaulters.length === 0) {
         container.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-6 text-emerald-600">
-                <i class="fas fa-check-circle text-3xl mb-2"></i>
-                <p class="text-sm font-semibold">All facilities have submitted WPD data!</p>
+            <div style="text-align: center; padding: 40px 20px; color: #059669;">
+                <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 16px; display: block; color: #10B981;"></i>
+                <p style="font-size: 1.1rem; font-weight: 700;">All facilities have submitted WPF data!</p>
             </div>
         `;
     } else {
         container.innerHTML = defaulters.sort().map(f => `
-            <div class="flex items-center gap-3 p-3 bg-red-50 border border-red-100 rounded-md">
-                <div class="w-2 h-2 rounded-full bg-red-500"></div>
-                <span class="text-sm font-semibold text-gray-800">${f}</span>
-                <span class="ml-auto text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">Not Submitted</span>
+            <div class="defaulter-card">
+                <div class="defaulter-card-icon"><i class="fas fa-hospital"></i></div>
+                <div class="defaulter-card-content">
+                    <div class="defaulter-card-title">${f}</div>
+                    <div class="defaulter-card-sub">Missing Submission</div>
+                </div>
+                <div class="defaulter-badge">Not Submitted</div>
             </div>
         `).join('');
     }
@@ -3338,37 +3425,23 @@ function formatDateDDMMYYYY(dateString) {
 
 // Toast Notification System
 function showToast(msg, type = 'success') {
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        document.body.appendChild(container);
+    }
     const toast = document.createElement('div');
-    toast.style.position = 'fixed';
-    toast.style.top = '24px';
-    toast.style.left = '50%';
-    toast.style.transform = 'translateX(-50%)';
-    toast.style.backgroundColor = type === 'success' ? 'var(--color-maroon)' : '#b22222';
-    toast.style.color = '#ffffff';
-    toast.style.padding = '12px 24px';
-    toast.style.borderRadius = '6px';
-    toast.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
-    toast.style.zIndex = '9999';
-    toast.style.fontWeight = '600';
-    toast.style.fontSize = '0.9rem';
-    toast.style.display = 'flex';
-    toast.style.alignItems = 'center';
-    toast.style.gap = '10px';
-
-    const icon = type === 'success' ? '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-exclamation-circle"></i>';
-    toast.innerHTML = `${icon}<span>${msg}</span>`;
-
-    document.body.appendChild(toast);
-
-    // Animate opacity
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.2s';
-    setTimeout(() => toast.style.opacity = '1', 50);
-
+    toast.className = 'toast ' + (type === 'error' ? 'error' : 'success');
+    const iconClass = type === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
+    toast.innerHTML = `<div class="toast-icon"><i class="${iconClass}"></i></div><span>${msg}</span>`;
+    container.appendChild(toast);
     setTimeout(() => {
         toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 200);
-    }, 3000);
+        toast.style.transform = 'translateX(40px)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3200);
 }
 
 // DEFAULTERS MODAL ACTIONS
@@ -3378,18 +3451,22 @@ window.openDefaultersModal = function () {
 
     if (currentDefaulters.length === 0) {
         container.innerHTML = `
-            <div style="text-align: center; padding: 24px; color: var(--color-text-muted);">
-                <i class="fas fa-check-circle" style="color: #2e7d32; font-size: 2.5rem; margin-bottom: 12px; display: block;"></i>
-                All facilities have reported. No defaulters!
+            <div style="text-align: center; padding: 40px 20px; color: #059669;">
+                <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 16px; display: block; color: #10B981;"></i>
+                <p style="font-size: 1.1rem; font-weight: 700;">All facilities have submitted EC Meeting data!</p>
             </div>
         `;
     } else {
         // Sort alphabetically
         const sortedDefaulters = [...currentDefaulters].sort();
-        container.innerHTML = sortedDefaulters.map(sc => `
-            <div class="defaulter-item">
-                <i class="fas fa-exclamation-circle"></i>
-                <span>${sc}</span>
+        container.innerHTML = sortedDefaulters.map(f => `
+            <div class="defaulter-card">
+                <div class="defaulter-card-icon"><i class="fas fa-hospital"></i></div>
+                <div class="defaulter-card-content">
+                    <div class="defaulter-card-title">${f}</div>
+                    <div class="defaulter-card-sub">Missing Submission</div>
+                </div>
+                <div class="defaulter-badge">Not Submitted</div>
             </div>
         `).join('');
     }
@@ -3441,10 +3518,6 @@ document.addEventListener('keydown', (e) => {
 async function fetchVitaminAData() {
     const tbody = document.getElementById('vitaminATableBody');
     tbody.innerHTML = `<tr class="loading-row"><td colspan="12"><i class="fas fa-spinner fa-spin"></i> Fetching Vitamin A data...</td></tr>`;
-
-    if (guardSupabaseAccess(tbody, 'Supabase is not available. The Vitamin A report cannot load in this browser session.')) {
-        return;
-    }
 
     try {
         const { data, error } = await supabaseClient
@@ -3671,9 +3744,23 @@ window.executeDeleteVitaminARecord = async function () {
 window.openVitaminADefaultersModal = function () {
     const container = document.getElementById('vitaminADefaultersListContainer');
     if (currentVitaminADefaulters.length === 0) {
-        container.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--color-text-muted);"><i class="fas fa-check-circle" style="color: #2e7d32; font-size: 2.5rem; margin-bottom: 12px; display: block;"></i>All facilities have reported. No defaulters!</div>`;
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px 20px; color: #059669;">
+                <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 16px; display: block; color: #10B981;"></i>
+                <p style="font-size: 1.1rem; font-weight: 700;">All facilities have submitted Vitamin A data!</p>
+            </div>
+        `;
     } else {
-        container.innerHTML = [...currentVitaminADefaulters].sort().map(sc => `<div class="defaulter-item"><i class="fas fa-exclamation-circle"></i><span>${sc}</span></div>`).join('');
+        container.innerHTML = [...currentVitaminADefaulters].sort().map(f => `
+            <div class="defaulter-card">
+                <div class="defaulter-card-icon"><i class="fas fa-hospital"></i></div>
+                <div class="defaulter-card-content">
+                    <div class="defaulter-card-title">${f}</div>
+                    <div class="defaulter-card-sub">Missing Submission</div>
+                </div>
+                <div class="defaulter-badge">Not Submitted</div>
+            </div>
+        `).join('');
     }
     document.getElementById('defaultersVitaminAModal').classList.add('active');
 }
@@ -3802,29 +3889,57 @@ window.exportVitaminAToPDF = function () {
 // Start dashboard view
 initDashboard();
 
-window.toggleSidebar = function() { const sidebar = document.querySelector('.sidebar'); if(sidebar) sidebar.classList.toggle('hidden-sidebar'); };
+window.toggleSidebar = function() {
+    const sidebar = document.getElementById('mainSidebar');
+    if (!sidebar) return;
+    if (window.innerWidth <= 1024) {
+        sidebar.classList.toggle('mobile-open');
+    } else {
+        sidebar.classList.toggle('collapsed');
+        const main = document.querySelector('.main-content');
+        if (main) main.style.marginLeft = sidebar.classList.contains('collapsed') ? '0' : 'var(--sidebar-width)';
+    }
+};
 
 let wpdStatMetrics = {};
 
-window.openWpdModal = function(metricName) {
+window.openWpdModal = function(metricKey, displayName) {
     const modal = document.getElementById('wpdModal');
     const title = document.getElementById('wpdModalTitle');
     const topList = document.getElementById('wpdModalTopList');
     const bottomList = document.getElementById('wpdModalBottomList');
     if (!modal || !title || !topList || !bottomList) return;
 
-    title.textContent = metricName + ' - Top 5 & Bottom 5';
+    title.textContent = (displayName || metricKey).toUpperCase() + ' - Top 5 & Bottom 5';
     topList.innerHTML = ''; bottomList.innerHTML = '';
-    const data = wpdStatMetrics[metricName] ? wpdStatMetrics[metricName].data : [];
+    const data = wpdStatMetrics[metricKey] ? wpdStatMetrics[metricKey].data : [];
     
     if (data.length === 0) {
-        topList.innerHTML = '<li><span class="fac-name text-muted">No data available</span></li>';
-        bottomList.innerHTML = '<li><span class="fac-name text-muted">No data available</span></li>';
+        topList.innerHTML = '<div style="padding:12px;text-align:center;color:var(--gray-500);font-size:0.9rem;">No data available</div>';
+        bottomList.innerHTML = '<div style="padding:12px;text-align:center;color:var(--gray-500);font-size:0.9rem;">No data available</div>';
     } else {
         const top5 = data.slice(0, 5);
         const bottom5 = data.slice(-5).reverse();
-        top5.forEach(item => { topList.innerHTML += '<li><span class="fac-name">' + item.facility + '</span><span class="fac-val">' + item.value.toLocaleString() + '</span></li>'; });
-        bottom5.forEach(item => { bottomList.innerHTML += '<li><span class="fac-name">' + item.facility + '</span><span class="fac-val">' + item.value.toLocaleString() + '</span></li>'; });
+        
+        top5.forEach((item, idx) => { 
+            topList.innerHTML += `
+                <div style="display:flex;align-items:center;padding:12px 16px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;gap:16px;margin-bottom:8px;">
+                    <div style="width:28px;height:28px;border-radius:50%;background:#86EFAC;color:#065F46;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85rem;">${idx + 1}</div>
+                    <div style="flex:1;font-weight:600;color:#065F46;font-size:0.95rem;">${item.facility}</div>
+                    <div style="font-weight:800;color:#047857;font-size:1.1rem;">${item.value.toLocaleString()}</div>
+                </div>
+            `; 
+        });
+        
+        bottom5.forEach((item, idx) => { 
+            bottomList.innerHTML += `
+                <div style="display:flex;align-items:center;padding:12px 16px;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;gap:16px;margin-bottom:8px;">
+                    <div style="width:28px;height:28px;border-radius:50%;background:#FCA5A5;color:#991B1B;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85rem;">${idx + 1}</div>
+                    <div style="flex:1;font-weight:600;color:#991B1B;font-size:0.95rem;">${item.facility}</div>
+                    <div style="font-weight:800;color:#B91C1C;font-size:1.1rem;">${item.value.toLocaleString()}</div>
+                </div>
+            `; 
+        });
     }
     modal.classList.add('active');
 };
