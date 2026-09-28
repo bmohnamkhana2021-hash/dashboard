@@ -278,7 +278,7 @@ function renderTable() {
             const isMatch = searchTerm && sc.toLowerCase().includes(searchTerm.toLowerCase());
             const highlightedSc = highlightText(sc, searchTerm);
             return isMatch
-                ? `<span class="sc-pill" style="background:var(--pink-100);border-color:var(--pink-300);color:var(--pink-700)">${highlightedSc}</span>`
+                ? `<span class="sc-pill" style="background:var(--saffron-50);border-color:var(--saffron-100);color:var(--saffron-300)">${highlightedSc}</span>`
                 : `<span class="sc-pill">${highlightedSc}</span>`;
         }).join('');
 
@@ -1515,8 +1515,8 @@ window.exportDelMonthlyToPDF = function () {
         didParseCell: function (data) {
             if (data.row.index === tableData.length - 1) {
                 data.cell.styles.fontStyle = 'bold';
-                data.cell.styles.textColor = [122, 28, 49];
-                data.cell.styles.fillColor = [252, 235, 235];
+                data.cell.styles.textColor = [245, 158, 11];
+                data.cell.styles.fillColor = [255, 248, 238];
             }
         },
         margin: { top: 25, bottom: 15, left: 14, right: 14 }
@@ -2752,8 +2752,8 @@ window.exportEcToPDF = function () {
             // Bold the grand total row
             if (data.row.index === tableData.length - 1) {
                 data.cell.styles.fontStyle = 'bold';
-                data.cell.styles.textColor = [122, 28, 49]; // Maroon text
-                data.cell.styles.fillColor = [252, 235, 235]; // Light pink bg
+                data.cell.styles.textColor = [245, 158, 11]; // saffron text
+                data.cell.styles.fillColor = [255, 248, 238]; // light saffron bg
             }
         },
         margin: { top: 25, bottom: 15, left: 14, right: 14 }
