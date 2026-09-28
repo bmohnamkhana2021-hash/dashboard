@@ -47,7 +47,7 @@
             <li class="nav-item active" id="navDashboard">
                 <a href="#" class="nav-link" onclick="switchView('dashboard');return false;">
                     <span class="icon"><i class="fas fa-chart-pie"></i></span>
-                    GP Overview
+                    Dashboard
                 </a>
             </li>
             <li class="nav-item" id="navEcReport">
@@ -90,8 +90,8 @@
                 <div class="topbar-left">
                     <button class="btn-menu-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
                     <div>
-                        <div class="topbar-page-title">Gram Panchayat Overview</div>
-                        <div class="topbar-breadcrumb"><span>Home</span><span class="crumb-sep">›</span><span class="crumb-current">GP Directory</span></div>
+                        <div class="topbar-page-title">Dashboard</div>
+                        <div class="topbar-breadcrumb"><span>Home</span><span class="crumb-sep">›</span><span class="crumb-current">Overview</span></div>
                     </div>
                 </div>
                 <div class="topbar-actions">
@@ -100,6 +100,34 @@
             </header>
 
             <!-- KPI Banner -->
+            <!-- Dashboard Landing / Synopsis -->
+            <section class="landing-synopsis">
+                <div class="landing-card">
+                    <h2>HealthPortal — Dashboard</h2>
+                    <p class="synopsis-text">Snapshot summary for Delivery Coverage and EC Meeting reports. Use the sidebar to open detailed reports and export data as needed.</p>
+                    <div class="landing-actions">
+                        <button class="btn btn-primary" onclick="switchView('delivery')"><i class="fas fa-baby"></i> Delivery</button>
+                        <button class="btn btn-outline" onclick="switchView('ec-report')"><i class="fas fa-clipboard-list"></i> EC Meeting</button>
+                    </div>
+                </div>
+                <div class="landing-stats">
+                    <div class="stat-card">
+                        <div class="stat-card-icon green"><span style="font-size:1.5rem">🟢</span></div>
+                        <div class="stat-card-info">
+                            <div class="stat-card-value" id="statGps">7</div>
+                            <div class="stat-card-label">Gram Panchayats</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon saffron"><span style="font-size:1.5rem">🟠</span></div>
+                        <div class="stat-card-info">
+                            <div class="stat-card-value" id="statScs">37</div>
+                            <div class="stat-card-label">Sub Centers</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <section class="stats-banner" id="dashboardStats">
                 <div class="stat-card">
                     <div class="stat-card-icon pink"><span style="font-size:1.5rem">🏛️</span></div>
