@@ -44,10 +44,10 @@
 
         <div class="sidebar-section-label">Reports</div>
         <ul class="nav-menu">
-            <li class="nav-item active" id="navDashboard">
-                <a href="#" class="nav-link" onclick="switchView('dashboard');return false;">
-                    <span class="icon"><i class="fas fa-chart-pie"></i></span>
-                    Dashboard
+            <li class="nav-item active" id="navLanding">
+                <a href="#" class="nav-link" onclick="switchView('landing');return false;">
+                    <span class="icon"><i class="fas fa-home"></i></span>
+                    Synopsis Landing
                 </a>
             </li>
             <li class="nav-item" id="navEcReport">
@@ -84,95 +84,149 @@
     <!-- ======================== MAIN CONTENT ======================== -->
     <main class="main-content">
 
-        <!-- ===================== VIEW 1: DASHBOARD ===================== -->
-        <div id="dashboardView">
+        <!-- ===================== VIEW 1: LANDING PAGE ===================== -->
+        <div id="landingView">
             <header class="topbar">
                 <div class="topbar-left">
                     <button class="btn-menu-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
                     <div>
-                        <div class="topbar-page-title">Dashboard</div>
-                        <div class="topbar-breadcrumb"><span>Home</span><span class="crumb-sep">›</span><span class="crumb-current">Overview</span></div>
+                        <div class="topbar-page-title">Executive Landing Overview</div>
+                        <div class="topbar-breadcrumb"><span>Home</span><span class="crumb-sep">›</span><span class="crumb-current">Synopsis Landing</span></div>
                     </div>
                 </div>
                 <div class="topbar-actions">
-                    <button class="btn btn-primary" onclick="refreshDashboard()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    <button class="btn btn-primary" onclick="refreshLandingData()"><i class="fas fa-sync-alt"></i> Refresh Data</button>
                 </div>
             </header>
 
-            <!-- KPI Banner -->
-            <!-- Dashboard Landing / Synopsis -->
-            <section class="landing-synopsis">
-                <div class="landing-card">
-                    <h2>HealthPortal — Dashboard</h2>
-                    <p class="synopsis-text">Snapshot summary for Delivery Coverage and EC Meeting reports. Use the sidebar to open detailed reports and export data as needed.</p>
-                    <div class="landing-actions">
-                        <button class="btn btn-primary" onclick="switchView('delivery')"><i class="fas fa-baby"></i> Delivery</button>
-                        <button class="btn btn-outline" onclick="switchView('ec-report')"><i class="fas fa-clipboard-list"></i> EC Meeting</button>
-                    </div>
-                </div>
-                <div class="landing-stats">
-                    <div class="stat-card">
-                        <div class="stat-card-icon green"><span style="font-size:1.5rem">🟢</span></div>
-                        <div class="stat-card-info">
-                            <div class="stat-card-value" id="statGps">7</div>
-                            <div class="stat-card-label">Gram Panchayats</div>
+            <div class="landing-grid" style="padding: 24px;">
+                <!-- KPI Ribbon -->
+                <div class="kpi-ribbon">
+                    <div class="kpi-card">
+                        <div class="kpi-icon"><i class="fas fa-users"></i></div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="landingKpiEcTotal">...</div>
+                            <div class="kpi-label">Total EC Attended</div>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-card-icon saffron"><span style="font-size:1.5rem">🟠</span></div>
-                        <div class="stat-card-info">
-                            <div class="stat-card-value" id="statScs">37</div>
-                            <div class="stat-card-label">Sub Centers</div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon"><i class="fas fa-baby-carriage"></i></div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="landingKpiDelTotal">...</div>
+                            <div class="kpi-label">Total Deliveries</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon"><i class="fas fa-hospital-user"></i></div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="landingKpiInstDel">...</div>
+                            <div class="kpi-label">Institutional Del. Rate</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="landingKpiReporting">...</div>
+                            <div class="kpi-label">SCs Reporting</div>
                         </div>
                     </div>
                 </div>
-            </section>
 
-            <section class="stats-banner" id="dashboardStats">
-                <div class="stat-card">
-                    <div class="stat-card-icon saffron"><span style="font-size:1.5rem">🏛️</span></div>
-                    <div class="stat-card-info">
-                        <div class="stat-card-value" id="statGps">7</div>
-                        <div class="stat-card-label">Gram Panchayats</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-card-icon green"><span style="font-size:1.5rem">🏥</span></div>
-                    <div class="stat-card-info">
-                        <div class="stat-card-value" id="statScs">37</div>
-                        <div class="stat-card-label">Sub Centers</div>
-                    </div>
-                </div>
-            </section>
+                <!-- Synopsis Sections -->
+                <div class="synopsis-section">
+                    <!-- EC Meeting Synopsis -->
+                    <div class="synopsis-card">
+                        <div class="synopsis-header">
+                            <div class="synopsis-title-wrap">
+                                <div class="synopsis-title-icon"><i class="fas fa-clipboard-list"></i></div>
+                                <div>
+                                    <div class="synopsis-title">EC Meeting Synopsis</div>
+                                    <div class="synopsis-subtitle">Key family planning & contraceptive distribution metrics</div>
+                                </div>
+                            </div>
+                            <a href="#" class="synopsis-action" onclick="switchView('ec-report');return false;">View Full <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                        
+                        <div class="synopsis-stats-grid">
+                            <div class="synopsis-stat">
+                                <div class="synopsis-stat-label">Teenage EC Attended</div>
+                                <div class="synopsis-stat-value" id="synEcTeen">...</div>
+                            </div>
+                            <div class="synopsis-stat">
+                                <div class="synopsis-stat-label">Total Sterilizations</div>
+                                <div class="synopsis-stat-value" id="synEcSteril">...</div>
+                            </div>
+                            <div class="synopsis-stat">
+                                <div class="synopsis-stat-label">Reversible (Antara + IUCD)</div>
+                                <div class="synopsis-stat-value" id="synEcRev">...</div>
+                            </div>
+                            <div class="synopsis-stat">
+                                <div class="synopsis-stat-label">Pills & Condoms</div>
+                                <div class="synopsis-stat-value" id="synEcPills">...</div>
+                            </div>
+                        </div>
 
-            <!-- GP Table -->
-            <section class="table-section">
-                <div class="section-header">
-                    <div>
-                        <div class="section-title">Sub Center Directory</div>
-                        <div class="section-subtitle">GP-wise breakdown of all sub centers</div>
+                        <div class="progress-bar-wrap">
+                            <div class="progress-label-flex">
+                                <span>Sterilization</span>
+                                <span>Reversible</span>
+                                <span>Pills/Condoms</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" id="pbEcSteril" style="width: 33%"></div>
+                                <div class="progress-fill secondary" id="pbEcRev" style="width: 33%"></div>
+                                <div class="progress-fill tertiary" id="pbEcPills" style="width: 34%"></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="search-wrap">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="searchInput" class="search-input" placeholder="Search GP or Sub Center..." oninput="handleSearch()">
+
+                    <!-- Delivery Coverage Synopsis -->
+                    <div class="synopsis-card">
+                        <div class="synopsis-header">
+                            <div class="synopsis-title-wrap">
+                                <div class="synopsis-title-icon"><i class="fas fa-baby"></i></div>
+                                <div>
+                                    <div class="synopsis-title">Delivery Coverage Synopsis</div>
+                                    <div class="synopsis-subtitle">Breakdown of delivery locations and outcomes</div>
+                                </div>
+                            </div>
+                            <a href="#" class="synopsis-action" onclick="switchView('delivery');return false;">View Full <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                        
+                        <div class="synopsis-stats-grid">
+                            <div class="synopsis-stat">
+                                <div class="synopsis-stat-label">Govt Facility Del.</div>
+                                <div class="synopsis-stat-value" id="synDelGovt">...</div>
+                            </div>
+                            <div class="synopsis-stat">
+                                <div class="synopsis-stat-label">Home Deliveries</div>
+                                <div class="synopsis-stat-value" id="synDelHome" style="color: var(--maroon-700);">...</div>
+                            </div>
+                            <div class="synopsis-stat">
+                                <div class="synopsis-stat-label">C-Section Rate</div>
+                                <div class="synopsis-stat-value" id="synDelCs">...</div>
+                            </div>
+                            <div class="synopsis-stat">
+                                <div class="synopsis-stat-label">Live Births</div>
+                                <div class="synopsis-stat-value" id="synDelLive">...</div>
+                            </div>
+                        </div>
+
+                        <div class="progress-bar-wrap">
+                            <div class="progress-label-flex">
+                                <span>Govt</span>
+                                <span>Private</span>
+                                <span>Home</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" id="pbDelGovt" style="width: 80%"></div>
+                                <div class="progress-fill secondary" id="pbDelPvt" style="width: 15%"></div>
+                                <div class="progress-fill tertiary" id="pbDelHome" style="width: 5%; background: var(--maroon-700);"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="table-container">
-                    <table class="smart-table">
-                        <thead>
-                            <tr>
-                                <th class="text-center" style="width:60px">Sl</th>
-                                <th class="sortable" onclick="handleSort('gp')">Gram Panchayat <span class="sort-icon-wrapper"><i class="fas fa-sort" id="sortIconGp"></i></span></th>
-                                <th class="sortable text-center" onclick="handleSort('count')" style="width:150px">SC Count <span class="sort-icon-wrapper"><i class="fas fa-sort" id="sortIconCount"></i></span></th>
-                                <th>Sub Centers</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody">
-                            <tr class="loading-row"><td colspan="4"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+            </div>
         </div>
 
         <!-- ===================== VIEW 2: EC MEETING ===================== -->
@@ -588,7 +642,7 @@
 <div id="defaultersModal" class="modal-overlay">
     <div class="modal-panel modal-panel-sm">
         <div class="modal-header">
-            <div class="modal-title"><div class="modal-title-icon" style="background:linear-gradient(135deg,#FF6B6B,#EF4444)"><i class="fas fa-exclamation-circle"></i></div> EC Defaulter Facilities</div>
+            <div class="modal-title"><div class="modal-title-icon" style="background:linear-gradient(135deg,var(--maroon-400),var(--maroon-500))"><i class="fas fa-exclamation-circle"></i></div> EC Defaulter Facilities</div>
             <button class="modal-close" onclick="closeDefaultersModal()"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body"><div id="defaultersListContainer" class="defaulter-list-scroll"></div></div>
@@ -649,7 +703,7 @@
 <div id="defaultersDeliveryModal" class="modal-overlay">
     <div class="modal-panel modal-panel-sm">
         <div class="modal-header">
-            <div class="modal-title"><div class="modal-title-icon" style="background:linear-gradient(135deg,#FF6B6B,#EF4444)"><i class="fas fa-exclamation-circle"></i></div> Delivery Defaulters</div>
+            <div class="modal-title"><div class="modal-title-icon" style="background:linear-gradient(135deg,var(--maroon-400),var(--maroon-500))"><i class="fas fa-exclamation-circle"></i></div> Delivery Defaulters</div>
             <button class="modal-close" onclick="closeDelDefaultersModal()"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body"><div id="delDefaultersListContainer" class="defaulter-list-scroll"></div></div>
@@ -708,7 +762,7 @@
 <div id="defaultersVitaminAModal" class="modal-overlay">
     <div class="modal-panel modal-panel-sm">
         <div class="modal-header">
-            <div class="modal-title"><div class="modal-title-icon" style="background:linear-gradient(135deg,#FF6B6B,#EF4444)"><i class="fas fa-exclamation-circle"></i></div> Vitamin A Defaulters</div>
+            <div class="modal-title"><div class="modal-title-icon" style="background:linear-gradient(135deg,var(--maroon-400),var(--maroon-500))"><i class="fas fa-exclamation-circle"></i></div> Vitamin A Defaulters</div>
             <button class="modal-close" onclick="closeVitaminADefaultersModal()"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body"><div id="vitaminADefaultersListContainer" class="defaulter-list-scroll"></div></div>
@@ -753,7 +807,7 @@
 <div id="defaultersWpdModal" class="modal-overlay">
     <div class="modal-panel modal-panel-sm">
         <div class="modal-header">
-            <div class="modal-title"><div class="modal-title-icon" style="background:linear-gradient(135deg,#FF6B6B,#EF4444)"><i class="fas fa-exclamation-circle"></i></div> WPF Defaulters</div>
+            <div class="modal-title"><div class="modal-title-icon" style="background:linear-gradient(135deg,var(--maroon-400),var(--maroon-500))"><i class="fas fa-exclamation-circle"></i></div> WPF Defaulters</div>
             <button class="modal-close" onclick="closeWpdDefaultersModal()"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body"><div id="wpdDefaultersListContainer" class="defaulter-list-scroll"></div></div>
@@ -766,7 +820,7 @@
     <div class="modal-panel modal-panel-sm" onclick="event.stopPropagation()">
         <div class="modal-header">
             <div class="modal-title">
-                <div class="modal-title-icon" style="background: linear-gradient(135deg, var(--teal-500), var(--teal-600)); color: white;">
+                <div class="modal-title-icon" style="background: linear-gradient(135deg, var(--green-500), var(--green-600)); color: white;">
                     <i class="fas fa-trophy"></i>
                 </div>
                 <span id="wpdModalTitle">Top 5 & Bottom 5</span>
@@ -774,12 +828,12 @@
             <button class="modal-close" onclick="closeWpdModal()"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body" style="padding: 24px; max-height: 70vh; overflow-y: auto;">
-            <div class="modal-list-title" style="color: #059669; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <div class="modal-list-title" style="color: var(--green-600); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                 <i class="fas fa-arrow-trend-up"></i> Top 5 Performing Facilities
             </div>
             <div id="wpdModalTopList" style="display: flex; flex-direction: column; gap: 8px;"></div>
             
-            <div class="modal-list-title" style="color: #DC2626; margin-top: 24px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <div class="modal-list-title" style="color: var(--maroon-700); margin-top: 24px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                 <i class="fas fa-arrow-trend-down"></i> Bottom 5 Facilities
             </div>
             <div id="wpdModalBottomList" style="display: flex; flex-direction: column; gap: 8px;"></div>
@@ -792,7 +846,7 @@
 
 <!-- Mobile Bottom Nav -->
 <nav class="mobile-bottom-nav" id="mobileBottomNav">
-    <a class="mob-nav-item active" id="mobNavDashboard" onclick="switchView('dashboard')" href="#"><i class="fas fa-chart-pie"></i><span>Home</span></a>
+    <a class="mob-nav-item active" id="mobNavLanding" onclick="switchView('landing')" href="#"><i class="fas fa-home"></i><span>Home</span></a>
     <a class="mob-nav-item" id="mobNavEcReport" onclick="switchView('ec-report')" href="#"><i class="fas fa-clipboard-list"></i><span>EC</span></a>
     <a class="mob-nav-item" id="mobNavDelivery" onclick="switchView('delivery')" href="#"><i class="fas fa-baby"></i><span>Delivery</span></a>
     <a class="mob-nav-item" id="mobNavWpdReport" onclick="switchView('wpd-report')" href="#"><i class="fas fa-file-medical"></i><span>WPF</span></a>
@@ -814,8 +868,14 @@ setInterval(updateClock, 1000);
 // Sidebar toggle (new version)
 window.toggleSidebar = function() {
     const sidebar = document.getElementById('mainSidebar');
-    sidebar.classList.toggle('collapsed');
-    sidebar.classList.toggle('mobile-open');
+    if (!sidebar) return;
+    if (window.innerWidth <= 1024) {
+        sidebar.classList.toggle('mobile-open');
+    } else {
+        sidebar.classList.toggle('collapsed');
+        const main = document.querySelector('.main-content');
+        if (main) main.style.marginLeft = sidebar.classList.contains('collapsed') ? '0' : 'var(--sidebar-width)';
+    }
 }
 </script>
 </body>

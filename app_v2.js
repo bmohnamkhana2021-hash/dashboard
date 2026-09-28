@@ -54,7 +54,7 @@ let ecMeetingData = [];
 let filteredEcData = [];
 let currentDefaulters = []; // Store non-reporting facilities
 let recordToDeleteId = null;
-let currentView = 'dashboard';
+let currentView = 'landing';
 
 // Delivery Coverage Report State
 let deliveryData = [];
@@ -81,7 +81,7 @@ let filteredVitaminAData = [];
 let currentVitaminADefaulters = [];
 let vitaminARecordToDeleteId = null;
 
-// DOM Elements - Dashboard View
+// DOM Elements - landing View
 const tableBody = document.getElementById('tableBody');
 const searchInput = document.getElementById('searchInput');
 const statGps = document.getElementById('statGps');
@@ -116,23 +116,8 @@ const editDeliveryForm = document.getElementById('editDeliveryForm');
 const defaultersDeliveryModal = document.getElementById('defaultersDeliveryModal');
 
 // Initialize Application
-function initDashboard() {
-    // Convert mapping to list of objects
-    gpList = Object.entries(gpMapping).map(([gp, scList]) => ({
-        gp,
-        scList: [...scList].sort(),
-        count: scList.length
-    }));
-
-    // Calculate metrics
-    const totalGps = gpList.length;
-    const totalScs = gpList.reduce((sum, item) => sum + item.count, 0);
-
-    // Display metrics
-    if (statGps) statGps.textContent = totalGps;
-    if (statScs) statScs.textContent = totalScs;
-
-    renderTable();
+function initLandingPage() {
+    refreshLandingData();
 }
 
 // ----------------------------------------------------
@@ -141,38 +126,38 @@ function initDashboard() {
 window.switchView = function (viewName) {
     currentView = viewName;
 
-    const navDashboard = document.getElementById('navDashboard');
+    const navLanding = document.getElementById('navLanding');
     const navEcReport = document.getElementById('navEcReport');
     const navDelivery = document.getElementById('navDelivery');
     const navWpdReport = document.getElementById('navWpdReport');
     const navIdcf = document.getElementById('navIdcf');
     const navVitaminA = document.getElementById('navVitaminA');
 
-    const dashboardView = document.getElementById('dashboardView');
+    const landingView = document.getElementById('landingView');
     const ecReportView = document.getElementById('ecReportView');
     const deliveryView = document.getElementById('deliveryView');
     const wpdReportView = document.getElementById('wpdReportView');
     const idcfView = document.getElementById('idcfView');
     const vitaminAView = document.getElementById('vitaminAView');
 
-    if (navDashboard) navDashboard.classList.remove('active');
+    if (navLanding) navLanding.classList.remove('active');
     if (navEcReport) navEcReport.classList.remove('active');
     if (navDelivery) navDelivery.classList.remove('active');
     if (navWpdReport) navWpdReport.classList.remove('active');
     if (navIdcf) navIdcf.classList.remove('active');
     if (navVitaminA) navVitaminA.classList.remove('active');
 
-    if (dashboardView) dashboardView.style.display = 'none';
+    if (landingView) landingView.style.display = 'none';
     if (ecReportView) ecReportView.style.display = 'none';
     if (deliveryView) deliveryView.style.display = 'none';
     if (wpdReportView) wpdReportView.style.display = 'none';
     if (idcfView) idcfView.style.display = 'none';
     if (vitaminAView) vitaminAView.style.display = 'none';
 
-    if (viewName === 'dashboard') {
-        if (navDashboard) navDashboard.classList.add('active');
-        if (dashboardView) dashboardView.style.display = 'block';
-        renderTable();
+    if (viewName === 'landing') {
+        if (navLanding) navLanding.classList.add('active');
+        if (landingView) landingView.style.display = 'block';
+        refreshLandingData();
     } else if (viewName === 'ec-report') {
         if (navEcReport) navEcReport.classList.add('active');
         if (ecReportView) ecReportView.style.display = 'block';
@@ -217,7 +202,7 @@ window.switchView = function (viewName) {
 
     // Sync mobile bottom nav active state
     const mobMap = {
-        'dashboard': 'mobNavDashboard',
+        'landing': 'mobnavLanding',
         'ec-report': 'mobNavEcReport',
         'delivery': 'mobNavDelivery',
         'wpd-report': 'mobNavWpdReport',
@@ -233,112 +218,99 @@ window.switchView = function (viewName) {
 }
 
 // ----------------------------------------------------
-// DASHBOARD VIEW LOGIC (GP wise SC Count)
+// LANDING PAGE LOGIC
 // ----------------------------------------------------
-function renderTable() {
-    let displayList = [...gpList];
-
-    // Filter logic
-    if (searchTerm.trim() !== '') {
-        const query = searchTerm.toLowerCase();
-        displayList = displayList.filter(item => {
-            const gpMatch = item.gp.toLowerCase().includes(query);
-            const matchingScs = item.scList.filter(sc => sc.toLowerCase().includes(query));
-            return gpMatch || matchingScs.length > 0;
-        });
+async function refreshLandingData() {
+    // If we don't have data, fetch it. The fetch functions will re-render the synopsis.
+    let needsFetch = false;
+    
+    if (ecMeetingData.length === 0) {
+        fetchEcMeetingData();
+        needsFetch = true;
     }
-
-    // Sort logic
-    if (sortField) {
-        displayList.sort((a, b) => {
-            let valA = sortField === 'gp' ? a.gp : a.count;
-            let valB = sortField === 'gp' ? b.gp : b.count;
-
-            if (typeof valA === 'string') {
-                return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-            } else {
-                return sortDirection === 'asc' ? valA - valB : valB - valA;
-            }
-        });
+    if (deliveryData.length === 0) {
+        fetchDeliveryData();
+        needsFetch = true;
     }
-
-    tableBody.innerHTML = '';
-
-    if (displayList.length === 0) {
-        tableBody.innerHTML = `
-            <tr class="no-data-row">
-                <td colspan="4" class="text-center">No Gram Panchayats or Sub Centers match your search.</td>
-            </tr>
-        `;
-        return;
+    
+    if (!needsFetch) {
+        renderLandingSynopsis();
     }
+}
 
-    displayList.forEach((item, index) => {
-        const scsHtml = item.scList.map(sc => {
-            const isMatch = searchTerm && sc.toLowerCase().includes(searchTerm.toLowerCase());
-            const highlightedSc = highlightText(sc, searchTerm);
-            return isMatch
-                ? `<span class="sc-pill" style="background:var(--saffron-50);border-color:var(--saffron-100);color:var(--saffron-300)">${highlightedSc}</span>`
-                : `<span class="sc-pill">${highlightedSc}</span>`;
-        }).join('');
-
-        const row = document.createElement('tr');
-        row.className = 'main-row';
-        row.innerHTML = `
-            <td class="text-center sl-no">${index + 1}</td>
-            <td class="gp-name-cell">
-                <span class="gp-name-text">${highlightText(item.gp, searchTerm)} GP</span>
-            </td>
-            <td class="text-center">
-                <span class="sc-count-badge">${item.count}</span>
-            </td>
-            <td class="sc-list-cell">
-                <div class="sc-list-text">${scsHtml}</div>
-            </td>
-        `;
-        tableBody.appendChild(row);
+function renderLandingSynopsis() {
+    // -- 1. EC Meeting Metrics --
+    let totalEcAttended = 0;
+    let teenEcAttended = 0;
+    let totalSteril = 0;
+    let totalRev = 0; // Antara + IUCD
+    let totalPills = 0; // CC + OP + ECP + Chhaya
+    
+    ecMeetingData.forEach(row => {
+        totalEcAttended += (row.total_ec_attended || 0);
+        teenEcAttended += (row.teenage_ec_attended || 0);
+        totalSteril += (row.f_sterilization || 0) + (row.m_sterilization || 0);
+        totalRev += (row.antara || 0) + (row.iucd || 0);
+        totalPills += (row.cc || 0) + (row.op || 0) + (row.ecp || 0) + (row.chhaya || 0);
     });
-}
 
-function highlightText(text, search) {
-    if (!search || search.trim() === '') return text;
-    const regex = new RegExp(`(${escapeRegExp(search)})`, 'gi');
-    return text.replace(regex, '<mark>$1</mark>');
-}
+    const totalContra = totalSteril + totalRev + totalPills;
+    const sterilPct = totalContra ? (totalSteril / totalContra) * 100 : 0;
+    const revPct = totalContra ? (totalRev / totalContra) * 100 : 0;
+    const pillsPct = totalContra ? (totalPills / totalContra) * 100 : 0;
 
-function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+    // -- 2. Delivery Coverage Metrics --
+    let totalDel = 0;
+    let totalGovtDel = 0;
+    let totalPvtDel = 0;
+    let totalHomeDel = 0;
+    let totalNormalDel = 0;
+    let totalCsDel = 0;
+    let totalLive = 0;
 
-window.handleSort = function (field) {
-    if (sortField === field) {
-        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-        sortField = field;
-        sortDirection = 'asc';
-    }
+    deliveryData.forEach(row => {
+        totalDel += (row.total_delivery || 0);
+        totalGovtDel += (row.delivery_govt || 0);
+        totalPvtDel += (row.delivery_private || 0);
+        totalHomeDel += (row.delivery_home || 0);
+        totalNormalDel += (row.normal_delivery || 0);
+        totalCsDel += (row.cs_delivery || 0);
+        totalLive += (row.live_birth || 0);
+    });
 
-    document.getElementById('sortIconGp').className = 'fas fa-sort';
-    document.getElementById('sortIconCount').className = 'fas fa-sort';
+    const instDelRate = totalDel ? ((totalGovtDel + totalPvtDel) / totalDel) * 100 : 0;
+    const govtPct = totalDel ? (totalGovtDel / totalDel) * 100 : 0;
+    const pvtPct = totalDel ? (totalPvtDel / totalDel) * 100 : 0;
+    const homePct = totalDel ? (totalHomeDel / totalDel) * 100 : 0;
+    
+    // -- 3. Facility Reporting & Defaulters --
+    const ecReportedScs = new Set(ecMeetingData.map(d => d.reporting_unit)).size;
+    
+    // Update DOM - Top Ribbon
+    document.getElementById('landingKpiEcTotal').textContent = totalEcAttended.toLocaleString();
+    document.getElementById('landingKpiDelTotal').textContent = totalDel.toLocaleString();
+    document.getElementById('landingKpiInstDel').textContent = instDelRate.toFixed(1) + '%';
+    document.getElementById('landingKpiReporting').textContent = ecReportedScs + ' / ' + default_units.length;
 
-    const activeIconId = field === 'gp' ? 'sortIconGp' : 'sortIconCount';
-    const activeIcon = document.getElementById(activeIconId);
-    activeIcon.className = sortDirection === 'asc' ? 'fas fa-sort-up active' : 'fas fa-sort-down active';
+    // Update DOM - EC Meeting
+    document.getElementById('synEcTeen').textContent = teenEcAttended.toLocaleString();
+    document.getElementById('synEcSteril').textContent = totalSteril.toLocaleString();
+    document.getElementById('synEcRev').textContent = totalRev.toLocaleString();
+    document.getElementById('synEcPills').textContent = totalPills.toLocaleString();
+    
+    document.getElementById('pbEcSteril').style.width = sterilPct + '%';
+    document.getElementById('pbEcRev').style.width = revPct + '%';
+    document.getElementById('pbEcPills').style.width = pillsPct + '%';
 
-    renderTable();
-}
+    // Update DOM - Delivery
+    document.getElementById('synDelGovt').textContent = totalGovtDel.toLocaleString();
+    document.getElementById('synDelHome').textContent = totalHomeDel.toLocaleString();
+    document.getElementById('synDelCs').textContent = totalCsDel.toLocaleString();
+    document.getElementById('synDelLive').textContent = totalLive.toLocaleString();
 
-window.handleSearch = function () {
-    searchTerm = searchInput.value;
-    renderTable();
-}
-
-window.refreshDashboard = function () {
-    if (searchInput) {
-        searchInput.value = '';
-        searchTerm = '';
-    }
-    initDashboard();
+    document.getElementById('pbDelGovt').style.width = govtPct + '%';
+    document.getElementById('pbDelPvt').style.width = pvtPct + '%';
+    document.getElementById('pbDelHome').style.width = homePct + '%';
 }
 
 // ----------------------------------------------------
@@ -364,6 +336,7 @@ async function fetchEcMeetingData() {
 
         updateCascadingDropdowns('init');
         applyEcFilters();
+        if (currentView === 'landing') renderLandingSynopsis();
     } catch (error) {
         console.error('Error fetching EC data:', error);
         reportTableBody.innerHTML = `
@@ -699,6 +672,8 @@ async function fetchDeliveryData() {
             initDelMonthlyDropdowns();
             delMonthlyInitialized = true;
         }
+
+        if (currentView === 'landing') renderLandingSynopsis();
     } catch (error) {
         console.error('Error fetching delivery data:', error);
         showToast('Failed to load delivery data: ' + error.message, 'error');
@@ -955,8 +930,8 @@ window.openDelDefaultersModal = function () {
 
     if (currentDelDefaulters.length === 0) {
         container.innerHTML = `
-            <div style="text-align: center; padding: 40px 20px; color: #059669;">
-                <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 16px; display: block; color: #10B981;"></i>
+            <div style="text-align: center; padding: 40px 20px; color: var(--green-600);">
+                <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 16px; display: block; color: var(--green-500);"></i>
                 <p style="font-size: 1.1rem; font-weight: 700;">All facilities have submitted Delivery Coverage data!</p>
             </div>
         `;
@@ -1515,8 +1490,8 @@ window.exportDelMonthlyToPDF = function () {
         didParseCell: function (data) {
             if (data.row.index === tableData.length - 1) {
                 data.cell.styles.fontStyle = 'bold';
-                data.cell.styles.textColor = [245, 158, 11];
-                data.cell.styles.fillColor = [255, 248, 238];
+                data.cell.styles.textColor = [122, 28, 49];
+                data.cell.styles.fillColor = [252, 235, 235];
             }
         },
         margin: { top: 25, bottom: 15, left: 14, right: 14 }
@@ -1614,7 +1589,7 @@ function formatWpdCellValue(value) {
 async function fetchWpdData() {
     const dashContainer = document.getElementById('wpdTableWrapper');
     if (dashContainer) {
-        dashContainer.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray-500)"><i class="fas fa-spinner fa-spin" style="color:var(--teal-500)"></i> Loading WPF data...</div>';
+        dashContainer.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray-500)"><i class="fas fa-spinner fa-spin" style="color:var(--green-500)"></i> Loading WPF data...</div>';
     }
 
     try {
@@ -1665,7 +1640,7 @@ async function fetchWpdData() {
     } catch (error) {
         console.error('Error fetching WPD data:', error);
         const dashEl = document.getElementById('wpdTableWrapper');
-        if (dashEl) dashEl.innerHTML = '<div style="padding:40px;text-align:center;color:#EF4444;font-weight:600">Error loading WPD data: ' + (error.message || 'Check Supabase connection.') + '</div>';
+        if (dashEl) dashEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--maroon-500);font-weight:600">Error loading WPD data: ' + (error.message || 'Check Supabase connection.') + '</div>';
     }
 }
 
@@ -2381,8 +2356,8 @@ window.openWpdDefaultersModal = function () {
 
     if (defaulters.length === 0) {
         container.innerHTML = `
-            <div style="text-align: center; padding: 40px 20px; color: #059669;">
-                <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 16px; display: block; color: #10B981;"></i>
+            <div style="text-align: center; padding: 40px 20px; color: var(--green-600);">
+                <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 16px; display: block; color: var(--green-500);"></i>
                 <p style="font-size: 1.1rem; font-weight: 700;">All facilities have submitted WPF data!</p>
             </div>
         `;
@@ -2752,8 +2727,8 @@ window.exportEcToPDF = function () {
             // Bold the grand total row
             if (data.row.index === tableData.length - 1) {
                 data.cell.styles.fontStyle = 'bold';
-                data.cell.styles.textColor = [245, 158, 11]; // saffron text
-                data.cell.styles.fillColor = [255, 248, 238]; // light saffron bg
+                data.cell.styles.textColor = [122, 28, 49]; // Maroon text
+                data.cell.styles.fillColor = [252, 235, 235]; // Light pink bg
             }
         },
         margin: { top: 25, bottom: 15, left: 14, right: 14 }
@@ -3451,8 +3426,8 @@ window.openDefaultersModal = function () {
 
     if (currentDefaulters.length === 0) {
         container.innerHTML = `
-            <div style="text-align: center; padding: 40px 20px; color: #059669;">
-                <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 16px; display: block; color: #10B981;"></i>
+            <div style="text-align: center; padding: 40px 20px; color: var(--green-600);">
+                <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 16px; display: block; color: var(--green-500);"></i>
                 <p style="font-size: 1.1rem; font-weight: 700;">All facilities have submitted EC Meeting data!</p>
             </div>
         `;
@@ -3745,8 +3720,8 @@ window.openVitaminADefaultersModal = function () {
     const container = document.getElementById('vitaminADefaultersListContainer');
     if (currentVitaminADefaulters.length === 0) {
         container.innerHTML = `
-            <div style="text-align: center; padding: 40px 20px; color: #059669;">
-                <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 16px; display: block; color: #10B981;"></i>
+            <div style="text-align: center; padding: 40px 20px; color: var(--green-600);">
+                <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 16px; display: block; color: var(--green-500);"></i>
                 <p style="font-size: 1.1rem; font-weight: 700;">All facilities have submitted Vitamin A data!</p>
             </div>
         `;
@@ -3886,8 +3861,8 @@ window.exportVitaminAToPDF = function () {
     doc.save(`VitaminA_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
-// Start dashboard view
-initDashboard();
+// Start landing view
+initLandingPage();
 
 window.toggleSidebar = function() {
     const sidebar = document.getElementById('mainSidebar');
@@ -3934,7 +3909,7 @@ window.openWpdModal = function(metricKey, displayName) {
         bottom5.forEach((item, idx) => { 
             bottomList.innerHTML += `
                 <div style="display:flex;align-items:center;padding:12px 16px;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;gap:16px;margin-bottom:8px;">
-                    <div style="width:28px;height:28px;border-radius:50%;background:#FCA5A5;color:#991B1B;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85rem;">${idx + 1}</div>
+                    <div style="width:28px;height:28px;border-radius:50%;background:var(--maroon-300);color:#991B1B;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85rem;">${idx + 1}</div>
                     <div style="flex:1;font-weight:600;color:#991B1B;font-size:0.95rem;">${item.facility}</div>
                     <div style="font-weight:800;color:#B91C1C;font-size:1.1rem;">${item.value.toLocaleString()}</div>
                 </div>
